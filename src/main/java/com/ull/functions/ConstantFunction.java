@@ -1,4 +1,4 @@
-package ull.tfg.functions;
+package com.ull.functions;
 
 /**
  * A constant value wrapped by a time function.

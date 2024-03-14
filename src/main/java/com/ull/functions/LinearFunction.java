@@ -1,4 +1,4 @@
-package ull.tfg.functions;
+package com.ull.functions;
 
 /**
  * Represents the linear function: Ax + B. Thus, two parameters are required: A (scale) and B (shift).

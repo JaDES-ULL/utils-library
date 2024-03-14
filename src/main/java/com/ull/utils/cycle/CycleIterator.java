@@ -1,4 +1,4 @@
-package ull.tfg.utils.cycle;
+package com.ull.utils.cycle;
 
 /**
  * Allows to iterate over a cycle definition. The start and end timestamp of

@@ -1,4 +1,4 @@
-package ull.tfg.utils.cycle;
+package com.ull.utils.cycle;
 import java.util.EnumSet;
 
 import ull.tfg.functions.TimeFunctionFactory;

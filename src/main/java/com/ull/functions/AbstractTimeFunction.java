@@ -1,4 +1,4 @@
-package ull.tfg.functions;
+package com.ull.functions;
 
 /**
  * An abstract class to return values corresponding to a specified function, which can depend on time.

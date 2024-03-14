@@ -1,4 +1,4 @@
-package ull.tfg;
+package com.ull;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

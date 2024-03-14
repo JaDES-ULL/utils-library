@@ -1,4 +1,4 @@
-package ull.tfg.functions;
+package com.ull.functions;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,4 +1,4 @@
-package ull.tfg.functions;
+package com.ull.functions;
 
 /**
  * Defines a time function which consists of an array of other time functions. The time unit

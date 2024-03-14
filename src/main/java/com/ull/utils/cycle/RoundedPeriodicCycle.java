@@ -1,4 +1,4 @@
-package ull.tfg.utils.cycle;
+package com.ull.utils.cycle;
 
 
 import ull.tfg.functions.AbstractTimeFunction;

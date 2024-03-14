@@ -1,4 +1,4 @@
-package ull.tfg.utils.concurrent;
+package com.ull.utils.concurrent;
 
 /**
  * A generic interface to create a pool of threads. A pool of threads consists on 1 to N threads which

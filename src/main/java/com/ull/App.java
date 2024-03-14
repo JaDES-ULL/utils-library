@@ -1,4 +1,4 @@
-package ull.tfg;
+package com.ull;
 
 /**
  * Hello world!

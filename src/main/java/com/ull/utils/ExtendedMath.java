@@ -1,4 +1,4 @@
-package ull.tfg.utils;
+package com.ull.utils;
 
 public class ExtendedMath {
   /**

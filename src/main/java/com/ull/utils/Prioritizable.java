@@ -1,4 +1,4 @@
-package ull.tfg.utils;
+package com.ull.utils;
 
 /**
  * A prioritizable object has a priority and can be used in a Prioritized Table.

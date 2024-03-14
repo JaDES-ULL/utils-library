@@ -1,4 +1,4 @@
-package ull.tfg.utils.cycle;
+package com.ull.utils.cycle;
 
 /**
  * Defines a set of timestamps when something happens.
