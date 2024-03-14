@@ -1,0 +1,8 @@
+com\ull\functions\PeriodicProportionFunctionTest.class
+com\ull\functions\ConstantFunctionTest.class
+com\ull\functions\ReplicableTimeFunctionTest.class
+com\ull\AppTest.class
+com\ull\functions\RandomFunctionTest.class
+com\ull\functions\NextHighFunctionTest.class
+com\ull\functions\PolynomialFunctionTest.class
+com\ull\functions\LinearFunctionTest.class

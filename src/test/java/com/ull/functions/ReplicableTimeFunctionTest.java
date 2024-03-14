@@ -6,10 +6,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import simkit.random.RandomVariate;
 import simkit.random.RandomVariateFactory;
-import ull.tfg.functions.AbstractTimeFunction;
-import ull.tfg.functions.RandomFunction;
-import ull.tfg.functions.ReplicableTimeFunction;
-import ull.tfg.functions.TimeFunctionParams;
+import com.ull.functions.AbstractTimeFunction;
+import com.ull.functions.RandomFunction;
+import com.ull.functions.ReplicableTimeFunction;
+import com.ull.functions.TimeFunctionParams;
 
 class ReplicableTimeFunctionTest {
 

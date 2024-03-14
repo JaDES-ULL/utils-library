@@ -149,7 +149,7 @@ public class TimeFunctionFactory {
       try {
         theClass = Thread.currentThread().getContextClassLoader().loadClass(
             searchPackage + "." + className );
-        if (!ull.tfg.functions.AbstractTimeFunction.class.isAssignableFrom(theClass)) {
+        if (!com.ull.functions.AbstractTimeFunction.class.isAssignableFrom(theClass)) {
           continue;
         }
       } catch (ClassNotFoundException e) { continue; }

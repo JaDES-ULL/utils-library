@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import simkit.random.RandomVariateFactory;
-import ull.tfg.functions.AbstractTimeFunction;
-import ull.tfg.functions.NextHighFunction;
-import ull.tfg.functions.PolynomialFunction;
-import ull.tfg.functions.RandomFunction;
-import ull.tfg.functions.TimeFunctionParams;
+import com.ull.functions.AbstractTimeFunction;
+import com.ull.functions.NextHighFunction;
+import com.ull.functions.PolynomialFunction;
+import com.ull.functions.RandomFunction;
+import com.ull.functions.TimeFunctionParams;
 
 class PolynomialFunctionTest {
 
