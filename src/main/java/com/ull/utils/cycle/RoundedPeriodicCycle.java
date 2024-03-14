@@ -1,8 +1,8 @@
 package com.ull.utils.cycle;
 
 
-import ull.tfg.functions.AbstractTimeFunction;
-import ull.tfg.utils.ExtendedMath;
+import com.ull.functions.AbstractTimeFunction;
+import com.ull.utils.ExtendedMath;
 
 /**
  * An special periodic cycle which rounds (or trunks) the incidence of events.

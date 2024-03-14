@@ -1,7 +1,7 @@
 package com.ull.utils.cycle;
 
-import ull.tfg.functions.AbstractTimeFunction;
-import ull.tfg.functions.TimeFunctionParams;
+import com.ull.functions.AbstractTimeFunction;
+import com.ull.functions.TimeFunctionParams;
 
 /**
  * Defines a periodically repeated sequence of events. It can be defined in

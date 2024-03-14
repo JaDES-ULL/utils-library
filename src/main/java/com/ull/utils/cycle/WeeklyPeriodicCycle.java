@@ -1,7 +1,7 @@
 package com.ull.utils.cycle;
 import java.util.EnumSet;
 
-import ull.tfg.functions.TimeFunctionFactory;
+import com.ull.functions.TimeFunctionFactory;
 
 /**
  * A week-based periodic cycle which allows a user to define events happening
