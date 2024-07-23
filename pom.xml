@@ -55,37 +55,29 @@
       <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.jacoco/jacoco-maven-plugin -->
     <dependency>
       <groupId>org.jacoco</groupId>
       <artifactId>jacoco-maven-plugin</artifactId>
-      <version>0.8.11</version>
+      <version>0.8.10</version>
     </dependency>
+
 
   </dependencies>
 
-  <profiles>
-    <profile>
-      <id>coverage</id>
-      <reports>
-        <reporting>
-          <builds>
-            <id>coverage</id>
-            <build>
+              <build>
               <plugins>
                 <plugin>
                   <groupId>org.jacoco</groupId>
                   <artifactId>jacoco-maven-plugin</artifactId>
-                  <version>0.8.7</version>
+                  <version>0.8.10</version>
                   <executions>
                     <execution>
                       <id>jacoco-initialize</id>
                       <goals>
                         <goal>prepare-agent</goal>
                       </goals>
-                      <configuration>
-                        <destFile>${basedir}/doc/jacoco.exec</destFile>
-                      </configuration>
                     </execution>
                     <execution>
                       <id>jacoco-report</id>
@@ -93,18 +85,9 @@
                       <goals>
                         <goal>report</goal>
                       </goals>
-                      <configuration>
-                        <dataFile>${basedir}/doc/jacoco.exec</dataFile>
-                        <outputDirectory>${basedir}/doc/jacoco</outputDirectory>
-                      </configuration>
                     </execution>
                   </executions>
                 </plugin>
               </plugins>
             </build>
-          </builds>
-        </reporting>
-      </reports>
-    </profile>
-  </profiles>
 </project>
