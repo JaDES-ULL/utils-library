@@ -1,5 +1,4 @@
 es\ull\simulation\functions\LinearFunction.class
-es\ull\simulation\functions\RoundFunction$1.class
 es\ull\simulation\functions\RoundFunction.class
 es\ull\simulation\utils\cycle\RoundedPeriodicCycle$RoundedPeriodicDiscreteIteratorLevel.class
 es\ull\simulation\utils\Prioritizable.class
@@ -45,7 +44,6 @@ es\ull\simulation\utils\cycle\PeriodicCycle$PeriodicDiscreteIteratorLevel.class
 es\ull\simulation\utils\cycle\PeriodicCycle$PeriodicIteratorLevel$1.class
 es\ull\simulation\utils\cycle\WeeklyPeriodicCycle$WeekDays.class
 es\ull\simulation\utils\cycle\PeriodicCycle$PeriodicIteratorLevel.class
-es\ull\simulation\utils\cycle\RoundedPeriodicCycle$1.class
 es\ull\simulation\utils\Output.class
 es\ull\simulation\utils\concurrent\StandardThreadPool$1.class
 es\ull\simulation\utils\cycle\RoundedPeriodicCycle$RoundedPeriodicIteratorLevel.class
