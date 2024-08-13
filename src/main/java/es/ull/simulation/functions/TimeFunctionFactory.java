@@ -1,5 +1,6 @@
 package es.ull.simulation.functions;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -91,10 +92,11 @@ public class TimeFunctionFactory {
 
     AbstractTimeFunction instance = null;
     try {
-      instance = (AbstractTimeFunction) timeFunctionClass.newInstance();
+      instance = (AbstractTimeFunction) timeFunctionClass.getDeclaredConstructor().newInstance();
     }
-    catch (InstantiationException e) { throw new RuntimeException(e); }
-    catch (IllegalAccessException e) { throw new RuntimeException(e); }
+    catch (InstantiationException | IllegalArgumentException | IllegalAccessException | NoSuchMethodException | SecurityException | InvocationTargetException e) { 
+      throw new RuntimeException(e); 
+    }
     instance.setParameters(parameters);
     return instance;
   }

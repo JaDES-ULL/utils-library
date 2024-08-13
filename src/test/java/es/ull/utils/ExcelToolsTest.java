@@ -83,7 +83,7 @@ class ExcelToolsTest {
   void validCell() {
     HSSFSheet sheet = workbook.createSheet();
     HSSFRow row = sheet.createRow(0);
-    HSSFCell cell = row.createCell(0);
+    row.createCell(0);
     assertTrue(ExcelTools.validCell(row, (short)0));
     assertFalse(ExcelTools.validCell(row, (short)1));
     assertFalse(ExcelTools.validCell(row, (short)2));
