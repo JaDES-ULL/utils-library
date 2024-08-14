@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A standard pool of threads, consisting on 1 to N threads to execute tasks.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class StandardThreadPool<T extends Runnable> implements ThreadPool<T> {
   /** List of free threads */
@@ -97,7 +97,7 @@ public class StandardThreadPool<T extends Runnable> implements ThreadPool<T> {
 
   /**
    * Each thread of the pool of threads.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   public class PoolElement extends Thread {
     T event = null;

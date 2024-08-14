@@ -6,7 +6,7 @@ import java.io.*;
  * Handles the debug messages of the simulator. There are two types of messages: <strong>DEBUG</strong>
  * and <strong>ERROR</strong>. ERROR messages are always shown, but DEBUG messages are showed only if the
  * <code>debugOn</code> parameter is true.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  *
  */
 public class Output {
@@ -59,7 +59,7 @@ public class Output {
    */
   public void error(String description) {
     try {
-      err.write("#" + Thread.currentThread().getName() + "#\tERROR!\t" + description + "\r\n");
+      err.write("ERROR!\t" + description + System.lineSeparator());
       err.flush();
     } catch (IOException e) {
       e.printStackTrace();
@@ -74,7 +74,7 @@ public class Output {
   public void debug(String msg) {
     if (debugEnabled) {
       try {
-        out.write("#" + Thread.currentThread().getName() + "#\t" + msg + "\r\n");
+        out.write(msg + System.lineSeparator());
         out.flush();
       } catch (IOException e) {
         e.printStackTrace();
@@ -83,10 +83,19 @@ public class Output {
   }
 
   /**
-   * @return the debugEnabled
+   * Returns true if debug messages are to be shown.
+   * @return True if debug messages are to be shown.
    */
   public boolean isDebugEnabled() {
     return debugEnabled;
+  }
+
+  /**
+   * Sets the debug mode.
+   * @param debugEnabled True if debug messages are to be shown.
+   */
+  public void setDebugEnabled(boolean debugEnabled) {
+    this.debugEnabled = debugEnabled;
   }
 }
 
