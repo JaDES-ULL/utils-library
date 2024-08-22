@@ -7,7 +7,7 @@ import java.util.Iterator;
  * A level of the prioritized map. All the objects belonging to a level have
  * the same priority. A level stores a value with the index of the next candidate
  * object.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 class PrioritizedLevel<E> extends ArrayList<E> {
   private static final long serialVersionUID = 1L;
@@ -62,7 +62,7 @@ class PrioritizedLevel<E> extends ArrayList<E> {
  * located in the same level of the structure. <p>Several iterators can be used to traverse this
  * structure. Each iterator gives a different level of equality of opportunity when accessing
  * objects with the same priority.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class PrioritizedTable<E extends Prioritizable>
     extends PrioritizedMap<PrioritizedLevel<E>, E> {
@@ -101,7 +101,7 @@ public class PrioritizedTable<E extends Prioritizable>
    * provided by starting at a different component each time a level is reached. Thus, the first time
    * the level #1 is reached, the 0th component is treated as the first component of the level; the
    * second time, it is the 1st component, and so on.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   private class BalancedIterator implements Iterator<E> {
     /** Main iterator level by level of the external estructure. */
@@ -163,7 +163,7 @@ public class PrioritizedTable<E extends Prioritizable>
    * object of this level each time <code>next</code> is called in a random way. The order the
    * objects of a level are returned is determined by a random permutation.
    * When the iterator reaches the end of the level, it starts the next level.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   private class RandomIterator implements Iterator<E> {
     /** Main iterator level by level of the external estructure. */

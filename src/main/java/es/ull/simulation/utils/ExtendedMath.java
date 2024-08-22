@@ -1,5 +1,9 @@
 package es.ull.simulation.utils;
 
+/**
+ * A simple class which provides classes to perform some mathematical operations. 
+ * @author Iván Castilla Rodríguez
+ */
 public class ExtendedMath {
   /**
    * Returns the closest multiple of factor to the argument.
@@ -131,4 +135,27 @@ public class ExtendedMath {
     }
     return limit;
   }
+
+	/**
+	 * Rescales the frequencies so that they sum up 1.
+	 */
+  public static double[] normalize(double[] frequencies) {
+    double sum = 0.0;
+    for (int i = 0; i < frequencies.length; ++i) {
+        if (frequencies[i] < 0.0) {
+            throw new IllegalArgumentException(
+                    String.format("Bad frequency value at index %d (value = %.3f)", i, frequencies[i]));
+        }
+        sum += frequencies[i];
+    }
+    if (sum > 0.0) {
+        for (int i = 0; i < frequencies.length; ++i) {
+            frequencies[i] /= sum;
+        }
+    } else {
+        throw new IllegalArgumentException(
+                String.format("Frequency sum not positive: %.3f", sum));
+    }
+    return frequencies;
+}
 }

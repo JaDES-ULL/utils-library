@@ -10,7 +10,7 @@ package es.ull.simulation.utils.cycle;
  * <p><b>IMPORTANT NOTE: 12/12/2006</b>
  * <br>This class has to change: The startTs and endTs of the parent cycle are
  * now considered as absolute.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class DiscreteCycleIterator {
   /** Subcycles traversed by this iterator */

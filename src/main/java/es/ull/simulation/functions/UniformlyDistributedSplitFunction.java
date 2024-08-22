@@ -4,7 +4,7 @@ package es.ull.simulation.functions;
  * Defines a time function which consists of an array of other time functions. The time unit
  * is used to choose the function corresponding to the current timestamp. Therefore,
  * getValue will return a value of part[i], where i = (ts / timeUnit) % functionArray.length
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class UniformlyDistributedSplitFunction extends AbstractTimeFunction {
   private AbstractTimeFunction [] part;

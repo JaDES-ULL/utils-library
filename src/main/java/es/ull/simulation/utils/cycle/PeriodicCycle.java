@@ -11,7 +11,7 @@ import es.ull.simulation.functions.TimeFunctionParams;
  * even define an infinite cycle (0 iterations).<p>
  * A cycle can be defined as containing a subcycle. The subcycle total duration
  * should be restricted to the main cycle period.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class PeriodicCycle extends Cycle {
   /** Relative time when this cycle is expected to start. */
@@ -142,7 +142,7 @@ public class PeriodicCycle extends Cycle {
 
   /**
    * Represents a level in the cycle structure. Each level is a subcycle.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   protected class PeriodicIteratorLevel extends Cycle.IteratorLevel {
     /** The next timestamp. */
@@ -225,7 +225,7 @@ public class PeriodicCycle extends Cycle {
 
   /**
    * Represents a level in the cycle structure. Each level is a subcycle.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   protected class PeriodicDiscreteIteratorLevel extends Cycle.DiscreteIteratorLevel {
     /** The next timestamp. */

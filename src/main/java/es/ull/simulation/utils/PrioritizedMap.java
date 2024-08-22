@@ -8,7 +8,7 @@ import java.util.TreeMap;
 /**
  * An structure which contains a priority-ordered map. Objects with the same priority are
  * located in the same level of the structure.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public abstract class PrioritizedMap<T extends Collection<E>,
                                      E extends Prioritizable> implements Iterable<E> {
@@ -45,10 +45,12 @@ public abstract class PrioritizedMap<T extends Collection<E>,
     final T level = levels.get(obj.getPriority());
     if (level == null)
       System.err.println(obj);
-    level.remove(obj);
-    if (level.isEmpty())
-      levels.remove(obj.getPriority());
-    nObj--;
+    else {
+      level.remove(obj);
+      if (level.isEmpty())
+        levels.remove(obj.getPriority());
+      nObj--;
+    }
   }
 
   public abstract T createLevel(Integer priority);
@@ -78,7 +80,7 @@ public abstract class PrioritizedMap<T extends Collection<E>,
    * <code>FIFOIterator</code> starts at level 0 (the highest priority) and returns
    * a new object of this level each time <code>next</code> is called. When the
    * iterator reaches the end of the level, it starts the next level.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   protected class FIFOIterator implements Iterator<E> {
     /** Main iterator level by level of the external estructure. */

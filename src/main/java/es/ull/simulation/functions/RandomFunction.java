@@ -3,7 +3,7 @@ package es.ull.simulation.functions;
 import simkit.random.RandomVariate;
 
 /**
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  *
  */
 public class RandomFunction extends AbstractTimeFunction {

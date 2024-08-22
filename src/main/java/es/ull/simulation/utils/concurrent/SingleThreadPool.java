@@ -7,7 +7,7 @@ import java.util.concurrent.Semaphore;
  * A single threaded pool of threads. This structure is intended to execute a set of tasks in a
  * sequential order.
  * This pool has a queue of waiting tasks and a semaphore to control the idle time.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class SingleThreadPool<T extends Runnable> extends Thread implements ThreadPool<T> {
   /** Finished flag */

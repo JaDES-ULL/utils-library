@@ -1,10 +1,12 @@
 package es.ull.simulation.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * A simple package to get some basic statistics.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  *
  */
 public class Statistics {
@@ -209,6 +211,33 @@ public class Statistics {
       return sortedValues[sortedValues.length - 1];
     return sortedValues[pos] + dif * (sortedValues[pos + 1] - sortedValues[pos]);
   }
+
+	/**
+	 * Returns the 2.5% and 97.5% percentiles of the array. The array does not need to be previously ordered
+	 * @param values An array of values
+	 * @return the 2.5% and 97.5% percentiles of the array
+	 */
+	public static double[] getPercentile95CI(double[] values) {
+		int n = values.length;
+		final double[] ordered = Arrays.copyOf(values, n);
+		Arrays.sort(ordered);
+		final int index = (int)Math.ceil(n * 0.025);
+		return new double[] {ordered[index - 1], ordered[n - index]}; 
+	}
+
+	/**
+	 * Returns the 2.5% and 97.5% percentiles of the array. The array does not need to be previously ordered
+	 * @param values An array of values
+	 * @return the 2.5% and 97.5% percentiles of the array
+	 */
+	public static int[] getPercentile95CI(int[] values) {
+		int n = values.length;
+		final int[] ordered = Arrays.copyOf(values, n);
+		Arrays.sort(ordered);
+		final int index = (int)Math.ceil(n * 0.025);
+		return new int[] {ordered[index - 1], ordered[n - index]}; 
+	}
+
   /**
    * Generates a time to event based on annual risk. The time to event is absolute,
    * i.e., can be used directly to schedule a new event.
@@ -305,5 +334,102 @@ public class Statistics {
     final double variance = sd * sd;
     return variance * k * (initBetaParams[0] - 1) / (initBetaParams[0] - 3 * variance * k);
   }
+
+	
+	/**
+	 * Computes a weighted average by multiplying each member of the <code>values</code> array by the corresponding member of the <code>weights</code> array, 
+	 * and then dividing by the sum of weights. Both arrays must be the same length.
+	 * @param weights Array of weights for each value
+	 * @param values Array of values 
+	 * @return The weighted average of the values applying the corresponding weights
+	 */
+	public static double weightedAverage(double[] weights, double[] values) {
+		if (values.length == 0)
+			return Double.NaN;
+		if (values.length != weights.length)
+			return Double.NaN;
+		double acc = 0.0;
+		double accWeights = 0.0;
+		for (int i = 0; i < values.length; i++) {
+			if (weights[i] > 0) {
+				acc += values[i] * weights[i];
+				accWeights += weights[i];
+			}
+		}
+		return acc / accWeights;		
+	}
+	
+	/**
+	 * Returns the weighted percentile for the specified values. Adapted from https://stackoverflow.com/questions/21844024/weighted-percentile-using-numpy/29677616#29677616  
+	 * @param weights Array of weights for each value
+	 * @param values Array of values 
+	 * @param percent Percentile to be found
+	 * @param sorted Specifies if the array was previously ordered
+	 * @return the weighted percentile for the specified values
+	 */
+	public static double weightedPercentile(double[] weights, double []values, double percent, boolean sorted) {
+		if (percent <= 0.0 || percent > 1.0)
+			return Double.NaN;
+		if (values.length == 0)
+			return Double.NaN;
+		if (values.length != weights.length)
+			return Double.NaN;
+		if (values.length == 1)
+			return values[0];
+		final ArrayList<WeightedValue> sortedValues = new ArrayList<>();
+		double totalWeight = 0.0;
+		for (int i = 0; i < values.length; i++) {
+			if (weights[i] > 0) {
+				sortedValues.add(new WeightedValue(weights[i], values[i]));
+				totalWeight += weights[i];
+			}
+		}
+		if (sortedValues.size() == 0)
+			return Double.NaN;
+		if (!sorted)
+			Collections.sort(sortedValues);
+		double cummWeight = 0.0;
+		double previousAux;
+		double aux = 0.0;
+		for (int i = 0; i < sortedValues.size(); i++) {
+			cummWeight += sortedValues.get(i).getWeight();
+			previousAux = aux;
+			aux = (cummWeight - 0.5 * sortedValues.get(i).getWeight()) / totalWeight;
+			if (aux > percent) {
+				return (i == 0) ? 
+					sortedValues.get(0).getValue() : 
+					sortedValues.get(i).getValue() - ((sortedValues.get(i).getValue() - sortedValues.get(i - 1).getValue()) * (aux - percent)) / (aux - previousAux);  
+			}
+		}
+		return sortedValues.get(sortedValues.size() - 1).getValue();
+	}
+	
+	/**
+	 * Auxiliary class to order together weights and values 
+	 * @author Iván Castilla Rodríguez
+	 *
+	 */
+	private static class WeightedValue implements Comparable<WeightedValue> {
+		private final double weight;
+		private final double value;
+		
+		public WeightedValue(double weight, double value) {
+			this.weight = weight;
+			this.value = value;
+		}
+
+		public double getWeight() {
+			return weight;
+		}
+
+		public double getValue() {
+			return value;
+		}
+
+		@Override
+		public int compareTo(WeightedValue o) {
+			return (int)Math.signum(value - o.value);
+		}
+	}
 }
 

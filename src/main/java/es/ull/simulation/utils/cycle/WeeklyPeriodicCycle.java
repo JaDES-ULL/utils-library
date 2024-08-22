@@ -6,7 +6,7 @@ import es.ull.simulation.functions.TimeFunctionFactory;
 /**
  * A week-based periodic cycle which allows a user to define events happening
  * some days a week.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class WeeklyPeriodicCycle extends PeriodicCycle {
   /**

@@ -10,7 +10,7 @@ import java.util.Collection;
  * prop.length</code>, and
  * <code>indexv = ((ts / timeUnit) / prop.length) % nElem.length</code>.
  *
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class PeriodicProportionFunction extends AbstractTimeFunction {
 

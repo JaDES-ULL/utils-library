@@ -4,7 +4,7 @@ package es.ull.simulation.utils.concurrent;
  * A generic interface to create a pool of threads. A pool of threads consists on 1 to N threads which
  * can execute tasks. The idea is to reuse the same threads once and again instead of being creating a
  * new thread per task.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public interface ThreadPool<T extends Runnable> {
   /**

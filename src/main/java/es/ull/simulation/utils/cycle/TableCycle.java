@@ -2,7 +2,7 @@ package es.ull.simulation.utils.cycle;
 
 /**
  * Defines a set of timestamps when something happens.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class TableCycle extends Cycle {
   /** The timestamps when something happens. */
@@ -57,7 +57,7 @@ public class TableCycle extends Cycle {
 
   /**
    * Represents a level in the cycle structure. Each level is a subcycle.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   protected class TableIteratorLevel extends IteratorLevel {
     /** The current timestamp */
@@ -113,7 +113,7 @@ public class TableCycle extends Cycle {
 
   /**
    * Represents a level in the cycle structure. Each level is a subcycle.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   protected class DiscreteTableIteratorLevel extends DiscreteIteratorLevel {
     /** The current timestamp */

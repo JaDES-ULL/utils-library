@@ -11,7 +11,7 @@ import simkit.random.RandomVariateFactory;
 /**
  * The same functionality of RandomVariateFactory by Arnold Buss, but it searches for TimeFunction
  * classes first, and then for the RandomVariate ones.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public class TimeFunctionFactory {
 

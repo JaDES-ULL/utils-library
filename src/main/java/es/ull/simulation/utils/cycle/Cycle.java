@@ -4,7 +4,7 @@ package es.ull.simulation.utils.cycle;
  * Defines a repeated sequence of events. <p>
  * A cycle can be defined as containing a subcycle. The subcycle total duration
  * should be restricted to the main cycle period.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public abstract class Cycle {
   /** Subcycle contained in this cycle. */
@@ -58,7 +58,7 @@ public abstract class Cycle {
 
   /**
    * Represents a level in a cycle iterator. Each level is a subcycle.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   abstract protected class IteratorLevel {
     double currentTs;
@@ -121,7 +121,7 @@ public abstract class Cycle {
 
   /**
    * Represents a level in a cycle iterator. Each level is a subcycle.
-   * @author Iv�n Castilla Rodr�guez
+   * @author Iván Castilla Rodríguez
    */
   abstract protected class DiscreteIteratorLevel {
     protected long currentTs;

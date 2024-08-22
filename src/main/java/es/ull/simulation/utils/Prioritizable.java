@@ -2,7 +2,7 @@ package es.ull.simulation.utils;
 
 /**
  * A prioritizable object has a priority and can be used in a Prioritized Table.
- * @author Iv�n Castilla Rodr�guez
+ * @author Iván Castilla Rodríguez
  */
 public interface Prioritizable {
   /**
