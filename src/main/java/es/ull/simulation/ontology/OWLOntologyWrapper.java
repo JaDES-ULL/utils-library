@@ -7,7 +7,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -239,7 +241,31 @@ public class OWLOntologyWrapper {
 		return result;
 	}
 	
+	/** 
+	 * Returns a list of strings representing the properties of the specified individual. This list includes the class it belongs to, the object properties and the data properties.
+	 * @param individualIRI An individual in the ontology
+	 * @param sep A separator to use between the property name and its value
+	 */
 	public ArrayList<String> getIndividualProperties(String individualIRI, String sep) {
+		final ArrayList<String> list = new ArrayList<>();
+		for (String clazz : getIndividualClasses(individualIRI)) {
+		    list.add("SUBCLASS_OF" + sep + clazz);
+		}
+		for (String objectProp : getIndividualObjectProperties(individualIRI).keySet()) {
+		    list.add(objectProp + sep + getIndividualObjectProperties(individualIRI).get(objectProp));
+		}
+		for (String dataProp : getIndividualDataProperties(individualIRI).keySet()) {
+		    list.add(dataProp + sep + getIndividualDataProperties(individualIRI).get(dataProp));
+		}
+		return list;
+	}
+	
+	/** 
+	 * Returns a list of strings representing the classes of a specified individual.
+	 * @param individualIRI An individual in the ontology
+	 * @param sep A separator to use between the property name and its value
+	 */
+	public ArrayList<String> getIndividualClasses(String individualIRI) {
 		final ArrayList<String> list = new ArrayList<>();
 		for (OWLClassAssertionAxiom axiom : ontology.getAxioms(AxiomType.CLASS_ASSERTION)) {
 		    if (axiom.getIndividual().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
@@ -248,22 +274,40 @@ public class OWLOntologyWrapper {
 		            // Skip anonymous classes
 		            continue;
 		        }
-		        list.add("SUBCLASS_OF" + sep + ((OWLClassImpl)classExpression.asOWLClass()).getIRI().getShortForm());
+		        list.add(((OWLClassImpl)classExpression.asOWLClass()).getIRI().getShortForm());
 		    }
 		}
-		for (OWLObjectPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)) {
-		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
-		        OWLObjectPropertyImpl property = (OWLObjectPropertyImpl) axiom.getProperty();
-		        list.add(property.getIRI().getShortForm() + sep + ((OWLNamedIndividualImpl)axiom.getObject()).getIRI().getShortForm());
-		    }
-		}
+		return list;
+	}
+
+	/** 
+	 * Returns a list of strings representing the data properties of the specified individual.
+	 * @param individualIRI An individual in the ontology
+	 */
+	public Map<String, String> getIndividualDataProperties(String individualIRI) {
+		final Map<String, String> map = new TreeMap<>();
 		for (OWLDataPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.DATA_PROPERTY_ASSERTION)) {
 		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
 		        OWLDataPropertyImpl property = (OWLDataPropertyImpl) axiom.getProperty();
-		        list.add(property.getIRI().getShortForm() + sep + axiom.getObject().getLiteral());
+		        map.put(property.getIRI().getShortForm(), axiom.getObject().getLiteral());
 		    }
 		}		
-		return list;
+		return map;
+	}
+	
+	/** 
+	 * Returns a list of strings representing the object properties of the specified individual.
+	 * @param individualIRI An individual in the ontology
+	 */
+	public Map<String, String> getIndividualObjectProperties(String individualIRI) {
+		final Map<String, String> map = new TreeMap<>();
+		for (OWLObjectPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)) {
+		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
+		        OWLObjectPropertyImpl property = (OWLObjectPropertyImpl) axiom.getProperty();
+		        map.put(property.getIRI().getShortForm(), ((OWLNamedIndividualImpl)axiom.getObject()).getIRI().getShortForm());
+		    }
+		}
+		return map;
 	}
 	
 	/**
@@ -359,7 +403,19 @@ public class OWLOntologyWrapper {
 	public String simplifyIRI(String IRI) {
 		return IRI;
 	}
-	
+
+	public void printTabulatedIndividuals() {
+		System.out.print("Individual\tClass\tObjectProperties\tDataProperties\n");
+
+		for (String individual : individualsToString()) {
+
+			System.out.println(individual + "\t" +
+					getIndividualClasses(individual).stream().collect(Collectors.joining(", ")) + "\t" +
+					getIndividualObjectProperties(individual).keySet().stream().collect(Collectors.joining(", ")) + "\t" +
+					getIndividualDataProperties(individual).keySet().stream().collect(Collectors.joining(", ")));
+		}
+	}
+
 	public void printIndividuals(boolean full) {
 		if (full) {
 			for (String individual : individualsToString()) {
@@ -421,5 +477,19 @@ public class OWLOntologyWrapper {
 		}
 	}
 	
-	
+	public static void main(String[] args) {
+		if (args.length < 2) {
+			System.out.println("Usage: java OWLOntologyWrapper <ontology file> <prefix>");
+			return;
+		}
+		try {
+			OWLOntologyWrapper wrapper = new OWLOntologyWrapper(args[0], args[1]);
+			wrapper.printTabulatedIndividuals();
+			wrapper.printClasses();
+			wrapper.printDataProperties();
+			wrapper.printObjectProperties();
+		} catch (OWLOntologyCreationException e) {
+			e.printStackTrace();
+		}
+	}
 }
