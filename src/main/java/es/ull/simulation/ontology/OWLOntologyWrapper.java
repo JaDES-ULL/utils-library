@@ -409,10 +409,15 @@ public class OWLOntologyWrapper {
 
 		for (String individual : individualsToString()) {
 
-			System.out.println(individual + "\t" +
-					getIndividualClasses(individual).stream().collect(Collectors.joining(", ")) + "\t" +
-					getIndividualObjectProperties(individual).keySet().stream().collect(Collectors.joining(", ")) + "\t" +
-					getIndividualDataProperties(individual).keySet().stream().collect(Collectors.joining(", ")));
+			System.out.print("#" + individual + "\t" + getIndividualClasses(individual).stream().collect(Collectors.joining(", ")) + "\t");
+			Map<String, String> objectProps = getIndividualObjectProperties(individual);
+			Map<String, String> dataProps = getIndividualDataProperties(individual);
+			for (String objectProp : objectProps.keySet())
+				System.out.print("#" + objectProp + ": #" + objectProps.get(objectProp) + "; ");
+			System.out.print("\t");
+			for (String dataProp : dataProps.keySet())
+				System.out.print("#" + dataProp + ": " + dataProps.get(dataProp) + "; ");
+			System.out.println();
 		}
 	}
 
@@ -478,16 +483,19 @@ public class OWLOntologyWrapper {
 	}
 	
 	public static void main(String[] args) {
+/*		try {
+			OWLOntologyWrapper wrapper = new OWLOntologyWrapper("G:\\Mi unidad\\Docencia\\TFG-TFM\\TFG INF Joel\\Compartida TFG INF Joel\\Pruebas\\CU1\\Ontologías\\osdi_CU1_P1_S1_M1.owx", "http://www.ull.es/iis/simulation/ontologies/disease-simulation#");
+			wrapper.printTabulatedIndividuals();
+		} catch (OWLOntologyCreationException e) {
+			e.printStackTrace();
+		}*/
 		if (args.length < 2) {
-			System.out.println("Usage: java OWLOntologyWrapper <ontology file> <prefix>");
+			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file> <prefix>");
 			return;
 		}
 		try {
 			OWLOntologyWrapper wrapper = new OWLOntologyWrapper(args[0], args[1]);
 			wrapper.printTabulatedIndividuals();
-			wrapper.printClasses();
-			wrapper.printDataProperties();
-			wrapper.printObjectProperties();
 		} catch (OWLOntologyCreationException e) {
 			e.printStackTrace();
 		}
