@@ -7,9 +7,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -251,11 +249,11 @@ public class OWLOntologyWrapper {
 		for (String clazz : getIndividualClasses(individualIRI)) {
 		    list.add("SUBCLASS_OF" + sep + clazz);
 		}
-		for (String objectProp : getIndividualObjectProperties(individualIRI).keySet()) {
-		    list.add(objectProp + sep + getIndividualObjectProperties(individualIRI).get(objectProp));
+		for (String[] objectProp : getIndividualObjectProperties(individualIRI)) {
+		    list.add(objectProp[0] + sep + objectProp[1]);
 		}
-		for (String dataProp : getIndividualDataProperties(individualIRI).keySet()) {
-		    list.add(dataProp + sep + getIndividualDataProperties(individualIRI).get(dataProp));
+		for (String[] dataProp : getIndividualDataProperties(individualIRI)) {
+		    list.add(dataProp[0] + sep + dataProp[1]);
 		}
 		return list;
 	}
@@ -281,33 +279,33 @@ public class OWLOntologyWrapper {
 	}
 
 	/** 
-	 * Returns a list of strings representing the data properties of the specified individual.
+	 * Returns a list of pairs of strings representing the data property names and their values for the specified individual.
 	 * @param individualIRI An individual in the ontology
 	 */
-	public Map<String, String> getIndividualDataProperties(String individualIRI) {
-		final Map<String, String> map = new TreeMap<>();
+	public ArrayList<String[]> getIndividualDataProperties(String individualIRI) {
+		final ArrayList<String[]> list = new ArrayList<>();
 		for (OWLDataPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.DATA_PROPERTY_ASSERTION)) {
 		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
 		        OWLDataPropertyImpl property = (OWLDataPropertyImpl) axiom.getProperty();
-		        map.put(property.getIRI().getShortForm(), axiom.getObject().getLiteral());
+		        list.add(new String[] {property.getIRI().getShortForm(), axiom.getObject().getLiteral()});
 		    }
 		}		
-		return map;
+		return list;
 	}
 	
 	/** 
-	 * Returns a list of strings representing the object properties of the specified individual.
+	 * Returns a list of pairs of strings representing the object property names and their values for the specified individual.
 	 * @param individualIRI An individual in the ontology
 	 */
-	public Map<String, String> getIndividualObjectProperties(String individualIRI) {
-		final Map<String, String> map = new TreeMap<>();
+	public ArrayList<String[]> getIndividualObjectProperties(String individualIRI) {
+		final ArrayList<String[]> list = new ArrayList<>();
 		for (OWLObjectPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)) {
 		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
 		        OWLObjectPropertyImpl property = (OWLObjectPropertyImpl) axiom.getProperty();
-		        map.put(property.getIRI().getShortForm(), ((OWLNamedIndividualImpl)axiom.getObject()).getIRI().getShortForm());
+		        list.add(new String[] {property.getIRI().getShortForm(), ((OWLNamedIndividualImpl)axiom.getObject()).getIRI().getShortForm()});
 		    }
 		}
-		return map;
+		return list;
 	}
 	
 	/**
@@ -410,13 +408,13 @@ public class OWLOntologyWrapper {
 		for (String individual : individualsToString()) {
 
 			System.out.print("#" + individual + "\t" + getIndividualClasses(individual).stream().collect(Collectors.joining(", ")) + "\t");
-			Map<String, String> objectProps = getIndividualObjectProperties(individual);
-			Map<String, String> dataProps = getIndividualDataProperties(individual);
-			for (String objectProp : objectProps.keySet())
-				System.out.print("#" + objectProp + ": #" + objectProps.get(objectProp) + "; ");
+			ArrayList<String[]> objectProps = getIndividualObjectProperties(individual);
+			ArrayList<String[]> dataProps = getIndividualDataProperties(individual);
+			for (String[] objectProp : objectProps)
+				System.out.print("#" + objectProp[0] + ": #" + objectProp[1] + "; ");
 			System.out.print("\t");
-			for (String dataProp : dataProps.keySet())
-				System.out.print("#" + dataProp + ": " + dataProps.get(dataProp) + "; ");
+			for (String[] dataProp : dataProps)
+				System.out.print("#" + dataProp[0] + ": " + dataProp[1] + "; ");
 			System.out.println();
 		}
 	}
