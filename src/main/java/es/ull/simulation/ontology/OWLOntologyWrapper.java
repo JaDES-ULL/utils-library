@@ -49,7 +49,7 @@ import uk.ac.manchester.cs.owl.owlapi.OWLObjectPropertyImpl;
 
 /**
  * A wrapper for an ontology in OWL. Creates convenient methods that shorten the use of OWLApi.
- * @author Iv�n Castilla
+ * @author Iván Castilla Rodríguez
  *
  */
 public class OWLOntologyWrapper {
@@ -62,6 +62,7 @@ public class OWLOntologyWrapper {
     /**
 	 * Creates a wrapper for the ontology in the file
 	 * @param file The file with the ontology 
+	 * @param prefix The prefix to use for the ontology
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
 	public OWLOntologyWrapper(File file, String prefix) throws OWLOntologyCreationException {
@@ -78,6 +79,7 @@ public class OWLOntologyWrapper {
 	/**
 	 * Creates a wrapper for the ontology in the file with the specified path
 	 * @param path Path to the file with the ontology
+	 * @param prefix The prefix to use for the ontology
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
 	public OWLOntologyWrapper(String path, String prefix) throws OWLOntologyCreationException {
@@ -102,6 +104,12 @@ public class OWLOntologyWrapper {
 		return ok;
 	}
 	
+	/**
+	 * Adds an object property value to the specified individual, linking it to another individual.
+	 * @param srcIndividualIRI The IRI of the source individual
+	 * @param objectProperty The IRI of the object property
+	 * @param destIndividualIRI The IRI of the destination individual
+	 */
 	public void addObjectPropertyValue(String srcIndividualIRI, String objectProperty, String destIndividualIRI) {
         final OWLNamedIndividual owlSrcIndividual = factory.getOWLNamedIndividual(srcIndividualIRI, pm);
         final OWLNamedIndividual owlDestIndividual = factory.getOWLNamedIndividual(destIndividualIRI, pm);
@@ -112,6 +120,12 @@ public class OWLOntologyWrapper {
 		
 	}
 
+	/**
+	 * Adds a data property value to the specified individual.
+	 * @param individualIRI The IRI of the individual to which the data property will be added
+	 * @param dataProperty The IRI of the data property
+	 * @param value The value to be assigned to the data property
+	 */
 	public void addDataPropertyValue(String individualIRI, String dataProperty, String value) {
         final OWLNamedIndividual owlIndividual = factory.getOWLNamedIndividual(individualIRI, pm);
         final OWLDataProperty owlDataProperty = factory.getOWLDataProperty(dataProperty, pm);
@@ -121,6 +135,13 @@ public class OWLOntologyWrapper {
 		
 	}
 
+	/**
+	 * Adds a data property value to the specified individual with a specific OWL2 datatype.
+	 * @param individualIRI The IRI of the individual to which the data property will be added
+	 * @param dataProperty The IRI of the data property
+	 * @param value The value to be assigned to the data property
+	 * @param dataType The OWL2 datatype of the value
+	 */
 	public void addDataPropertyValue(String individualIRI, String dataProperty, String value, OWL2Datatype dataType) {
         final OWLNamedIndividual owlIndividual = factory.getOWLNamedIndividual(individualIRI, pm);
         final OWLDataProperty owlDataProperty = factory.getOWLDataProperty(dataProperty, pm);
@@ -129,22 +150,46 @@ public class OWLOntologyWrapper {
         manager.addAxiom(ontology, ax);		
 	}
 	
+	/**
+	 * Returns the OWLClass object for the specified class IRI
+	 * @param classIRI The IRI of the class
+	 * @return The OWLClass object for the specified class IRI
+	 */
 	public OWLClass getClass(String classIRI) {
 		return factory.getOWLClass(classIRI, pm);
 	}
 	
+	/**
+	 * Returns the OWLObjectProperty object for the specified object property IRI
+	 * @param objectPropIRI The IRI of the object property
+	 * @return The OWLObjectProperty object for the specified object property IRI
+	 */
 	public OWLObjectProperty getObjectProperty(String objectPropIRI) {
 		return factory.getOWLObjectProperty(objectPropIRI, pm);
 	}
 	
+	/**
+	 * Returns the OWLDataProperty object for the specified data property IRI
+	 * @param dataPropIRI The IRI of the data property
+	 * @return The OWLDataProperty object for the specified data property IRI
+	 */
 	public OWLDataProperty getDataProperty(String dataPropIRI) {
 		return factory.getOWLDataProperty(dataPropIRI, pm);
 	}
 	
+	/**
+	 * Returns the OWLIndividual object for the specified individual IRI
+	 * @param individualIRI The IRI of the individual
+	 * @return The OWLIndividual object for the specified individual IRI
+	 */
 	public OWLIndividual getIndividual(String individualIRI) {
 		return factory.getOWLNamedIndividual(individualIRI, pm);
 	}
 	
+	/**
+	 * Returns a set of strings representing the names of the individuals in the ontology
+	 * @return a set of strings representing the names of the individuals in the ontology
+	 */
 	public Set<String> individualsToString() {
 		final TreeSet<String> set = new TreeSet<>();
 		for (OWLNamedIndividual individual : ontology.getIndividualsInSignature()) {
@@ -153,6 +198,10 @@ public class OWLOntologyWrapper {
 		return set;
 	}
 	
+	/**
+	 * Returns a set of strings representing the names of the classes in the ontology
+	 * @return a set of strings representing the names of the classes in the ontology
+	 */
 	public Set<String> classesToString() {
 		final TreeSet<String> set = new TreeSet<>();
 		for (OWLClass clazz : ontology.getClassesInSignature()) {
@@ -161,6 +210,10 @@ public class OWLOntologyWrapper {
 		return set;
 	}
 	
+	/**
+	 * Returns a set of strings representing the names of the data properties in the ontology
+	 * @return a set of strings representing the names of the data properties in the ontology
+	 */
 	public Set<String> dataPropertiesToString() {
 		final TreeSet<String> set = new TreeSet<>();
 		for (OWLDataProperty dataProp : ontology.getDataPropertiesInSignature()) {
@@ -169,6 +222,10 @@ public class OWLOntologyWrapper {
 		return set;
 	}
 	
+	/**
+	 * Returns a set of strings representing the names of the object properties in the ontology
+	 * @return a set of strings representing the names of the object properties in the ontology
+	 */
 	public Set<String> objectPropertiesToString() {
 		final TreeSet<String> set = new TreeSet<>();
 		for (OWLObjectProperty objectProp : ontology.getObjectPropertiesInSignature()) {
@@ -243,6 +300,8 @@ public class OWLOntologyWrapper {
 	 * Returns a list of strings representing the properties of the specified individual. This list includes the class it belongs to, the object properties and the data properties.
 	 * @param individualIRI An individual in the ontology
 	 * @param sep A separator to use between the property name and its value
+	 * @return a list of strings representing the properties of the specified individual. This list includes the class it belongs to, the object properties and the data properties.
+	 * Each string in the list is formatted as "PROPERTY_NAME" + sep + "PROPERTY_VALUE".
 	 */
 	public ArrayList<String> getIndividualProperties(String individualIRI, String sep) {
 		final ArrayList<String> list = new ArrayList<>();
@@ -261,7 +320,7 @@ public class OWLOntologyWrapper {
 	/** 
 	 * Returns a list of strings representing the classes of a specified individual.
 	 * @param individualIRI An individual in the ontology
-	 * @param sep A separator to use between the property name and its value
+	 * @return a list of strings representing the classes of a specified individual.
 	 */
 	public ArrayList<String> getIndividualClasses(String individualIRI) {
 		final ArrayList<String> list = new ArrayList<>();
@@ -281,6 +340,7 @@ public class OWLOntologyWrapper {
 	/** 
 	 * Returns a list of pairs of strings representing the data property names and their values for the specified individual.
 	 * @param individualIRI An individual in the ontology
+	 * @return a list of pairs of strings representing the data property names and their values for the specified individual.
 	 */
 	public ArrayList<String[]> getIndividualDataProperties(String individualIRI) {
 		final ArrayList<String[]> list = new ArrayList<>();
@@ -296,6 +356,7 @@ public class OWLOntologyWrapper {
 	/** 
 	 * Returns a list of pairs of strings representing the object property names and their values for the specified individual.
 	 * @param individualIRI An individual in the ontology
+	 * @return a list of pairs of strings representing the object property names and their values for the specified individual.
 	 */
 	public ArrayList<String[]> getIndividualObjectProperties(String individualIRI) {
 		final ArrayList<String[]> list = new ArrayList<>();
@@ -348,6 +409,10 @@ public class OWLOntologyWrapper {
 		return result;
 	}
 	
+	/**
+	 * Removes all individuals of the specified class from the ontology
+	 * @param classIRI The IRI of a class in the ontology
+	 */
 	public void removeIndividualsOfClass(String classIRI) {
 		final OWLClass owlClass = factory.getOWLClass(classIRI, pm);
 		final NodeSet<OWLNamedIndividual> individualsNodeSet = reasoner.getInstances(owlClass, false);
@@ -360,6 +425,11 @@ public class OWLOntologyWrapper {
 		remover.reset();
 	}
 	
+	/**
+	 * Creates a subclass relationship between the specified class and its superclass
+	 * @param classIRI The IRI of the class to be created
+	 * @param superclassIRI The IRI of the superclass
+	 */
 	public void createClassSubClassOf(String classIRI, String superclassIRI) {
 		final OWLClassExpression owlSuperClass = factory.getOWLClass(superclassIRI, pm);
 		final OWLClass owlClass = factory.getOWLClass(classIRI, pm);
@@ -368,6 +438,12 @@ public class OWLOntologyWrapper {
 	    manager.applyChange(addAx);
 	}
 	
+	/**
+	 * Collects all individuals of the specified class and changes them to subclasses of the specified class. 
+	 * Adds the prefix to the individual names to create the new class IRIs. 
+	 * @param classIRI The IRI of the class whose individuals will be changed to subclasses
+	 * @param prefix The prefix to be added to the individual names to create the new class IRIs
+	 */
 	public void changeInstanceToSubclass(String classIRI, String prefix) {
 		final Set<String> individuals = getIndividuals(classIRI);
 		removeIndividualsOfClass(classIRI);
@@ -377,8 +453,10 @@ public class OWLOntologyWrapper {
 	}
 	
 	/**
+	 * Converts a camel case string to SNAKE_CASE.
 	 * Adapted from https://www.geeksforgeeks.org/convert-camel-case-string-to-snake-case-in-java/
-	 * @param name
+	 * @param name The camel case string to be converted
+	 * @return The converted string in SNAKE_CASE
 	 */
 	public static String camel2SNAKE(String name) {
         // Regular Expression
@@ -402,6 +480,12 @@ public class OWLOntologyWrapper {
 		return IRI;
 	}
 
+	/**
+	 * Prints a tabulated list of individuals, their classes, object properties and data properties.
+	 * The output is formatted as:
+	 * Individual    Class    ObjectProperties    DataProperties
+	 * #Individual1  Class1  #ObjectProp1: #ObjectValue1; #ObjectProp2: #ObjectValue2;    #DataProp1: DataValue1; #DataProp2: DataValue2;
+	 */
 	public void printTabulatedIndividuals() {
 		System.out.print("Individual\tClass\tObjectProperties\tDataProperties\n");
 
@@ -419,6 +503,12 @@ public class OWLOntologyWrapper {
 		}
 	}
 
+	/**
+	 * Prints a list of individuals, their classes, object properties and data properties.
+	 * If full is true, it prints the individual name, class, object properties and data properties.
+	 * If full is false, it prints only the individual name.
+	 * @param full If true, prints the individual name, class, object properties and data properties; otherwise, prints only the individual name.
+	 */
 	public void printIndividuals(boolean full) {
 		if (full) {
 			for (String individual : individualsToString()) {
@@ -433,6 +523,13 @@ public class OWLOntologyWrapper {
 		}
 	}
 
+	/**
+	 * Prints a list of individuals of the specified class, their properties and values.
+	 * If full is true, it prints the individual name, class, object properties and data properties.
+	 * If full is false, it prints only the individual name.
+	 * @param classIRI The IRI of the class whose individuals will be printed
+	 * @param full If true, prints the individual name, class, object properties and data properties; otherwise, prints only the individual name.
+	 */
 	public void printIndividuals(String classIRI, boolean full) {
 		if (full) {
 			for (String individual : getIndividuals(classIRI)) {
@@ -447,33 +544,60 @@ public class OWLOntologyWrapper {
 		}
 	}
 	
+	/**
+	 * Print the names of the classes in the ontology, one per line.
+	 * If the class names are to be printed as an enum, use printClassesAsEnum() instead.
+	 */
 	public void printClasses() {
 		for (String clazz: classesToString())
 			System.out.println(clazz);
 	}
 	
+	/**
+	 * A convenient method to populate enums in java with a collection of classes.
+	 * The class names are converted to SNAKE_CASE format.
+	 * If the class names are to be printed as a list, use printClasses() instead.
+	 */
 	public void printClassesAsEnum() {
 		for (String name : classesToString()) {
 			System.out.println(camel2SNAKE(name) + "(\"" + name + "\"),");
 		}
 	}
 
+	/**
+	 * Print the names of the data properties in the ontology, one per line.
+	 * If the data property names are to be printed as an enum, use printDataPropertiesAsEnum() instead.
+	 */
 	public void printDataProperties() {
 		for (String dataProp: dataPropertiesToString())
 			System.out.println(dataProp);
 	}
 	
+	/**
+	 * A convenient method to populate enums in java with a collection of data properties.
+	 * The data property names are converted to SNAKE_CASE format.
+	 * If the data property names are to be printed as a list, use printDataProperties() instead.
+	 */
 	public void printDataPropertiesAsEnum() {
 		for (String name : dataPropertiesToString()) {
 			System.out.println(camel2SNAKE(name) + "(\"" + name + "\"),");
 		}
 	}
 
+	/**
+	 * Print the names of the object properties in the ontology, one per line.
+	 * If the object property names are to be printed as an enum, use printObjectPropertiesAsEnum() instead.
+	 */
 	public void printObjectProperties() {
 		for (String objectProp: objectPropertiesToString())
 			System.out.println(objectProp);
 	}
 	
+	/**
+	 * A convenient method to populate enums in java with a collection of object properties.
+	 * The object property names are converted to SNAKE_CASE format.
+	 * If the object property names are to be printed as a list, use printObjectProperties() instead.
+	 */
 	public void printObjectPropertiesAsEnum() {
 		for (String name : objectPropertiesToString()) {
 			System.out.println(camel2SNAKE(name) + "(\"" + name + "\"),");
