@@ -6,12 +6,12 @@ import java.io.IOException;
 
 import es.ull.simulation.utils.ExcelTools;
 import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,26 +32,26 @@ class ExcelToolsTest {
 
   @Test
   void getBoldFont() {
-    HSSFFont font = ExcelTools.getBoldFont(workbook);
+    Font font = ExcelTools.getBoldFont(workbook);
     assertNotNull(font);
     assertTrue(font.getBold());
   }
 
   @Test
   void getErrorStyle() {
-    HSSFCellStyle style = ExcelTools.getErrorStyle(workbook);
+    CellStyle style = ExcelTools.getErrorStyle(workbook);
     assertNotNull(style);
-    HSSFFont font = style.getFont(workbook);
+    Font font = workbook.getFontAt(style.getFontIndex());
     assertNotNull(font);
     assertTrue(font.getItalic());
-    assertEquals(HSSFFont.COLOR_RED, font.getColor());
+    assertEquals(Font.COLOR_RED, font.getColor());
   }
 
   @Test
   void getHeadStyle() {
-    HSSFCellStyle style = ExcelTools.getHeadStyle(workbook);
+    CellStyle style = ExcelTools.getHeadStyle(workbook);
     assertNotNull(style);
-    HSSFFont font = style.getFont(workbook);
+    Font font = workbook.getFontAt(style.getFontIndex());
     assertNotNull(font);
     assertTrue(font.getBold());
     assertEquals(64,
