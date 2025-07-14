@@ -106,6 +106,19 @@ public class ExcelTools {
     }
 
     /**
+     * Gets or creates a cell at the specified column and row in the given sheet.
+     * 
+     * @param sheet    The sheet where the row should be retrieved or created.
+     * @param rowIndex The index of the row where the cell should be retrieved or created.
+     * @param colIndex The index of the column to retrieve or create.
+     * @return The Cell at the specified index.
+     */
+    public static Cell getOrCreateCell(Sheet sheet, int rowIndex, int colIndex) {
+        Row row = getOrCreateRow(sheet, rowIndex);
+        return getOrCreateCell(row, colIndex);
+    }
+
+    /**
      * Gets or creates a row at the specified index in the given sheet.
      * 
      * @param sheet    The sheet where the row should be retrieved or created.
