@@ -12,6 +12,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.AreaReference;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
 
 /**
@@ -278,4 +279,33 @@ public class ExcelTools {
         cell.setCellValue(newValue);
     }
 
+    /**
+     * Creates a named range in the specified sheet at the given row and column.
+     * @param sheet The sheet where the cell is located.
+     * @param row The row index of the cell.
+     * @param col The column index of the cell.
+     * @param rangeName The name to assign to the cell range.
+     * @param absolute If true, the cell reference will be absolute (e.g., $A$1), otherwise it will be relative (e.g., A1).
+     */
+    public static void nameRange(Sheet sheet, int row, int col, String rangeName, boolean absolute) {
+        final Name cellName = sheet.getWorkbook().createName();
+        cellName.setNameName(rangeName);
+        cellName.setRefersToFormula("'" + sheet.getSheetName() + "'!" + new CellReference(row, col, absolute, absolute).formatAsString());
+    }
+
+    /**
+     * Creates a named range in the specified sheet at the given range
+     * @param sheet The sheet where the cell is located.
+     * @param startRow The starting row index of the range.
+     * @param startCol The starting column index of the range.
+     * @param endRow The ending row index of the range.
+     * @param endCol The ending column index of the range.
+     * @param rangeName The name to assign to the cell range.
+     * @param absolute If true, the cell reference will be absolute (e.g., $A$1), otherwise it will be relative (e.g., A1).
+     */
+    public static void nameRange(Sheet sheet, int startRow, int startCol, int endRow, int endCol, String rangeName, boolean absolute) {
+        final Name cellName = sheet.getWorkbook().createName();
+        cellName.setNameName(rangeName);
+        cellName.setRefersToFormula("'" + sheet.getSheetName() + "'!" + new CellRangeAddress(startRow, endRow, startCol, endCol).formatAsString());
+    }
 }
