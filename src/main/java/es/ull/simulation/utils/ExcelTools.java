@@ -257,4 +257,25 @@ public class ExcelTools {
         Sheet sourceSheet = workbook.getSheet(firstCell.getSheetName());
         copyCellRange(sourceSheet, firstCell.getRow(), firstCell.getCol(), lastCell.getRow(), lastCell.getCol(), targetSheet, targetStartRow, targetStartCol);
     }
+
+    /**
+     * Sets the value of the first cell of a named range in the workbook.
+     * @param workbook The workbook containing the named range.
+     * @param rangeName The name of the range to set the value for.
+     * @param newValue The new value to set for the first cell of the named range.
+     */
+    public static void setValue(Workbook workbook, String rangeName, String newValue) {
+        Name namedRange = workbook.getName(rangeName);
+        if (namedRange == null) {
+            throw new IllegalArgumentException("Named range '" + rangeName + "' does not exist in the workbook.");
+        }
+
+        String formula = namedRange.getRefersToFormula(); 
+        AreaReference areaRef = new AreaReference(formula, workbook.getSpreadsheetVersion());
+        CellReference firstCell = areaRef.getFirstCell();
+        Sheet sheet = workbook.getSheet(firstCell.getSheetName());
+        Cell cell = getOrCreateCell(sheet, firstCell.getRow(), firstCell.getCol());
+        cell.setCellValue(newValue);
+    }
+
 }
