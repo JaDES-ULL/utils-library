@@ -23,55 +23,24 @@ import org.apache.poi.ss.util.CellReference;
 
 public class ExcelTools {
     /**
-     * Creates an Excel font which is bold.
+     * Gets the string value of a cell in a given sheet at the specified row and column.
      * 
-     * @param wb Workbook where the font is used.
-     * @return A bold Excel font.
-     *
-     **/
-    public static Font getBoldFont(Workbook wb) {
-        final Font boldFont = wb.createFont();
-        boldFont.setBold(true);
-        return boldFont;
-    }
-
-    /**
-     * Creates an Excel style to remark error cells.
-     * 
-     * @param wb Workbook where the style is used.
-     * @return A red and italic font.
-     **/
-    public static CellStyle getErrorStyle(Workbook wb) {
-        final Font redFont = wb.createFont();
-        // redFont.setColor(HSSFColor.RED.index);
-        redFont.setColor(HSSFFont.COLOR_RED);
-        redFont.setItalic(true);
-        final CellStyle errorStyle = wb.createCellStyle();
-        errorStyle.setFont(redFont);
-        return errorStyle;
-    }
-
-    /**
-     * Creates an Excel style to remark header cells.
-     * 
-     * @param wb Workbook where the style is used.
-     * @return A grey background and a bold font.
-     **/
-    public static CellStyle getHeadStyle(Workbook wb) {
-        final CellStyle headStyle = wb.createCellStyle();
-        // headStyle.setFillForegroundColor(HSSFColor.GREY_25_PERCENT.index);
-        headStyle.setFillForegroundColor(HSSFColorPredefined.GREY_25_PERCENT.getColor());
-        // headStyle.setFillPattern(HSSFCellStyle.SOLID_FOREGROUND);
-        headStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        headStyle.setWrapText(true);
-        headStyle.setFont(getBoldFont(wb));
-        return headStyle;
-    }
-
+     * @param s     The sheet where the cell is located.
+     * @param row   The row index of the cell.
+     * @param column The column index of the cell.
+     * @return The string value of the cell.
+     */
     public static String getString(Sheet s, int row, int column) {
         return s.getRow(row).getCell(column).getRichStringCellValue().getString();
     }
 
+    /**
+     * Gets the string value of a cell in a given row at the specified column.
+     * 
+     * @param r      The row where the cell is located.
+     * @param column The column index of the cell.
+     * @return The string value of the cell.
+     */
     public static String getString(Row r, int column) {
         String res = "";
         if (r.getCell(column).getCellType() == CellType.NUMERIC)
@@ -82,6 +51,13 @@ public class ExcelTools {
 
     }
 
+    /**
+     * Checks if a cell in a given row at the specified column is valid.
+     * 
+     * @param r      The row where the cell is located.
+     * @param column The column index of the cell.
+     * @return True if the cell is valid, false otherwise.
+     */
     public static boolean validCell(Row r, int column) {
         if (r.getCell(column) == null)
             return false;

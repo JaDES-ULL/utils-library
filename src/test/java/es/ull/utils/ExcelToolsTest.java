@@ -31,35 +31,6 @@ class ExcelToolsTest {
   }
 
   @Test
-  void getBoldFont() {
-    Font font = ExcelTools.getBoldFont(workbook);
-    assertNotNull(font);
-    assertTrue(font.getBold());
-  }
-
-  @Test
-  void getErrorStyle() {
-    CellStyle style = ExcelTools.getErrorStyle(workbook);
-    assertNotNull(style);
-    Font font = workbook.getFontAt(style.getFontIndex());
-    assertNotNull(font);
-    assertTrue(font.getItalic());
-    assertEquals(Font.COLOR_RED, font.getColor());
-  }
-
-  @Test
-  void getHeadStyle() {
-    CellStyle style = ExcelTools.getHeadStyle(workbook);
-    assertNotNull(style);
-    Font font = workbook.getFontAt(style.getFontIndex());
-    assertNotNull(font);
-    assertTrue(font.getBold());
-    assertEquals(64,
-                 style.getFillForegroundColor());
-    assertEquals(FillPatternType.SOLID_FOREGROUND, style.getFillPattern());
-  }
-
-  @Test
   void getString() {
     HSSFSheet sheet = workbook.createSheet();
     HSSFRow row = sheet.createRow(0);
