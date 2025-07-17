@@ -280,6 +280,26 @@ public class ExcelTools {
     }
 
     /**
+     * Sets the value of the first cell of a named range in the workbook.
+     * @param workbook The workbook containing the named range.
+     * @param rangeName The name of the range to set the value for.
+     * @param newValue The new value to set for the first cell of the named range.
+     */
+    public static void setValue(Workbook workbook, String rangeName, double newValue) {
+        Name namedRange = workbook.getName(rangeName);
+        if (namedRange == null) {
+            throw new IllegalArgumentException("Named range '" + rangeName + "' does not exist in the workbook.");
+        }
+
+        String formula = namedRange.getRefersToFormula(); 
+        AreaReference areaRef = new AreaReference(formula, workbook.getSpreadsheetVersion());
+        CellReference firstCell = areaRef.getFirstCell();
+        Sheet sheet = workbook.getSheet(firstCell.getSheetName());
+        Cell cell = getOrCreateCell(sheet, firstCell.getRow(), firstCell.getCol());
+        cell.setCellValue(newValue);
+    }
+
+    /**
      * Creates a named range in the specified sheet at the given row and column.
      * @param sheet The sheet where the cell is located.
      * @param row The row index of the cell.
