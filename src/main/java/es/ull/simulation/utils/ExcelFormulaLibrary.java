@@ -4,6 +4,12 @@ import java.util.Arrays;
 
 public enum ExcelFormulaLibrary implements ExcelFormula {
     RAND("RAND()"),
+    INDIRECT("INDIRECT(%s)"),
+    SUM("SUM(%s)"),
+    MIN("MIN(%s)"),
+    MAX("MAX(%s)"),
+    COUNT("COUNT(%s)"),
+    COUNTIF("COUNTIF(%s,%s)"),
     AVERAGE("AVERAGE(%s)"),
     STD_DEV("STDEV(%s)"),
     OFFSET("OFFSET(%s,%s,%s,%s)"),
@@ -27,7 +33,14 @@ public enum ExcelFormulaLibrary implements ExcelFormula {
             return super.getFormula(newOperands);
         }
     },
-    BERNOULLI_INV("(%s < %s) * 1");
+    BERNOULLI_INV("(%s < %s) * 1"),
+    VLOOKUP("VLOOKUP(%s,%s,%s,%s)"),
+    HLOOKUP("HLOOKUP(%s,%s,%s,%s)"),
+    VLOOKUP_EXACT("VLOOKUP(%s,%s,%s,FALSE)"),
+    HLOOKUP_EXACT("HLOOKUP(%s,%s,%s,FALSE)"),
+    IF("IF(%s,%s,%s)"),
+    ROUND("ROUND(%s,%s)"),
+    ROUND0("ROUND(%s,0)");
 
     private final String template;
 
