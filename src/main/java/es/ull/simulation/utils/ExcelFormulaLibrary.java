@@ -6,6 +6,7 @@ public enum ExcelFormulaLibrary implements ExcelFormula {
     RAND("RAND()"),
     INDIRECT("INDIRECT(%s)"),
     SUM("SUM(%s)"),
+    PRODUCT("PRODUCT(%s)"),
     MIN("MIN(%s)"),
     MAX("MAX(%s)"),
     COUNT("COUNT(%s)"),
