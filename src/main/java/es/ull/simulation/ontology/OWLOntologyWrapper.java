@@ -534,7 +534,7 @@ public class OWLOntologyWrapper {
 			EntitySearcher.getObjectPropertyValues(subject, property, o)
 				.forEach(obj -> {
 					if (obj.isNamed()) {
-						String shortName = simplifyIRI(obj.asOWLNamedIndividual().getIRI().getShortForm());
+						String shortName = obj.asOWLNamedIndividual().getIRI().getShortForm();
 						result.add(shortName);
 					} else {
 						result.add("[Anonymous Individual]");
@@ -617,15 +617,6 @@ public class OWLOntologyWrapper {
         // with replacement string
         // and convert it to upper case.
         return name.replaceAll(regex, replacement).toUpperCase();
-	}
-
-	/**
-	 * A convenient method to get just the name from IRIs. It depends on the ontology prefix, so it must be overriden by subclasses.
-	 * @param IRI Original complex IRI
-	 * @return The simplified IRI 
-	 */
-	public String simplifyIRI(String IRI) {
-		return IRI;
 	}
 
 	/**
