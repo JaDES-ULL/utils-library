@@ -1,0 +1,35 @@
+@prefix : <http://example.org/sample#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/sample>
+    a owl:Ontology .
+
+### Clases
+:ModelElement a owl:Class ;
+    rdfs:label "Model Element"@en .
+
+:Disease a owl:Class ;
+    rdfs:subClassOf :ModelElement ;
+    rdfs:label "Disease"@en .
+
+:SimulationModel a owl:Class ;
+    rdfs:label "Simulation Model"@en .
+
+### Propiedades
+:hasDescription a owl:DatatypeProperty ;
+    rdfs:domain :Disease ;
+    rdfs:range xsd:string ;
+    rdfs:label "has description"@en .
+
+:hasStudyYear a owl:DatatypeProperty ;
+    rdfs:domain :SimulationModel ;
+    rdfs:range xsd:integer ;
+    rdfs:label "has study year"@en .
+
+:includedByModel a owl:ObjectProperty ;
+    rdfs:domain :Disease ;
+    rdfs:range :SimulationModel ;
+    rdfs:label "included by model"@en .

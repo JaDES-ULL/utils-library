@@ -1,0 +1,15 @@
+@prefix : <http://example.org/sample#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/sample-data>
+    a owl:Ontology ;
+    owl:imports <http://example.org/sample> .
+
+:BiotinidaseDeficiency_General a owl:NamedIndividual, :Disease ;
+    :hasDescription "Deficiencia de Biotinidasa (DB)" ;
+    :includedByModel :BiotinidaseDeficiency_Model .
+
+:BiotinidaseDeficiency_Model a owl:NamedIndividual, :SimulationModel .
