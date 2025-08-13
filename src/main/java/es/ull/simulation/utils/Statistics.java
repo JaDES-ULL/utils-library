@@ -271,6 +271,17 @@ public class Statistics {
   }
 
   /**
+   * Computes the annual risk (probability of event per year) given the average time until the event (in years).
+   * @param yearsUntilEvent Average time until the event (in years)
+   * @return Annual probability of occurrence (between 0 and 1)
+   */
+  public static double getAnnualRiskFromTimeToEvent(double yearsUntilEvent) {
+      if (yearsUntilEvent <= 0)
+          return Double.NaN;
+      return 1.0 - Math.exp(-1.0 / yearsUntilEvent);
+  }
+
+  /**
    * Computes the standard deviation from 95% confidence intervals. Assumes that
    * the confidence intervals are based in a normal distribution.
    * @param ci Original 95% confidence intervals
