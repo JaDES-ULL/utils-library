@@ -10,7 +10,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -211,6 +210,17 @@ public class OntologyTest {
             clazzes.contains(TEST_DISEASE_CLASS));
         assertTrue("The individual " + TEST_PRELOADED_DISEASE_INSTANCE + " should not (directly) belong to class " + TEST_SUPER_CLASS,
             !clazzes.contains(TEST_SUPER_CLASS));
+    }
+
+    @Test
+    public void testLabelRetrieval() throws OWLOntologyCreationException {
+        final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
+        String label = ontologyWrapper.getLabelForIRI(TEST_PRELOADED_DISEASE_INSTANCE, "en");
+        debugPrint("Label for " + TEST_PRELOADED_DISEASE_INSTANCE + " in English: " + label);
+        assertEquals("Label should match", "Biotinidase deficiency", label);
+        label = ontologyWrapper.getLabelForIRI(TEST_PRELOADED_DISEASE_INSTANCE, "es");
+        debugPrint("Label for " + TEST_PRELOADED_DISEASE_INSTANCE + " in Spanish: " + label);
+        assertEquals("Label should match", "Deficiencia de biotinidasa", label);
     }
 
     @Test

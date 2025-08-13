@@ -16,6 +16,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.AddAxiom;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
@@ -23,6 +24,7 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDataProperty;
 import org.semanticweb.owlapi.model.OWLDataPropertyAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
@@ -598,6 +600,29 @@ public class OWLOntologyWrapper {
 		for (String ind : individuals) {
 			createClassSubClassOf(prefix + ind, classIRI);
 		}
+	}
+
+	/**
+	 * Returns the label (rdfs:label) of an ontology element in a specific language, if available.
+	 * @param elementIRI The IRI of the element in the ontology
+	 * @param lang The language code (e.g., "es" or "en")
+	 * @return The label in the given language, or null if none is found
+	 */
+	public String getLabelForIRI(String elementIRI, String lang) {
+		OWLEntity entity = ontology.entitiesInSignature(factory.getOWLNamedIndividual(elementIRI, pm).getIRI(), Imports.INCLUDED)
+			.findFirst()
+			.orElse(null);
+		if (entity != null) {
+			for (OWLAnnotation annotation : EntitySearcher.getAnnotations(entity, ontology).collect(Collectors.toList())) {
+				if (annotation.getProperty().isLabel() && annotation.getValue().asLiteral().isPresent()) {
+					OWLLiteral literal = annotation.getValue().asLiteral().get();
+					if (literal.hasLang(lang)) {
+						return literal.getLiteral();
+					}
+				}
+			}
+		}
+		return null;
 	}
 	
 	/**

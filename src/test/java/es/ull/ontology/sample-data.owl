@@ -10,6 +10,10 @@
 
 :BiotinidaseDeficiency_General a owl:NamedIndividual, :Disease ;
     :hasDescription "Deficiencia de Biotinidasa (DB)" ;
-    :includedByModel :BiotinidaseDeficiency_Model .
+    :includedByModel :BiotinidaseDeficiency_Model ;
+                rdfs:label "Biotinidase deficiency"@en ,
+                           "Deficiencia de biotinidasa"@es .
 
-:BiotinidaseDeficiency_Model a owl:NamedIndividual, :SimulationModel .
+:BiotinidaseDeficiency_Model a owl:NamedIndividual, :SimulationModel ;
+                rdfs:label "Model for biotinidase deficiency"@en ,
+                           "Modelo para la deficiencia de biotinidasa"@es .
