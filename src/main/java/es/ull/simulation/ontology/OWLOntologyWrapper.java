@@ -769,13 +769,30 @@ public class OWLOntologyWrapper {
 	}
 	
 	public static void main(String[] args) {
-		if (args.length < 2) {
-			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file> <prefix>");
+		if (args.length < 3) {
+			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file> <prefix> <mode>");
+			System.out.println("Mode can be 1 to print individuals, 2 to print classes and properties to be used in an enum");
 			return;
 		}
 		try {
 			OWLOntologyWrapper wrapper = new OWLOntologyWrapper(args[0], args[1]);
-			wrapper.printTabulatedIndividuals();
+			int mode = Integer.parseInt(args[2]);
+			switch (mode) {
+				case 1:
+					wrapper.printTabulatedIndividuals();
+					break;
+				case 2:
+					System.out.println("---------------- CLASSES ----------------");
+					wrapper.printClassesAsEnum();
+					System.out.println("---------------- DATA PROPS ----------------");
+					wrapper.printDataPropertiesAsEnum();
+					System.out.println("---------------- OBJECT PROPS ----------------");
+					wrapper.printObjectPropertiesAsEnum();
+					break;
+				default:
+					System.out.println("Invalid mode. Use 1 or 2.");
+					break;
+			}
 		} catch (OWLOntologyCreationException e) {
 			e.printStackTrace();
 		}

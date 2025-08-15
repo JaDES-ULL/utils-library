@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 public enum ExcelFormulaLibrary implements ExcelFormula {
     RAND("RAND()"),
+    EXP("EXP(%s)"),
+    POWER("POWER(%s,%s)"),
     INDIRECT("INDIRECT(%s)"),
     SUM("SUM(%s)"),
     PRODUCT("PRODUCT(%s)"),
