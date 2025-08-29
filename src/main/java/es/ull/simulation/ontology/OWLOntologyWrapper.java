@@ -7,11 +7,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.semanticweb.HermiT.Configuration;
+import org.semanticweb.HermiT.ReasonerFactory;
+import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.AddAxiom;
 import org.semanticweb.owlapi.model.AxiomType;
@@ -22,12 +27,15 @@ import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLDataMinCardinality;
 import org.semanticweb.owlapi.model.OWLDataProperty;
 import org.semanticweb.owlapi.model.OWLDataPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
+import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
+import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -43,11 +51,15 @@ import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.reasoner.structural.StructuralReasonerFactory;
 import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
+import org.semanticweb.owlapi.util.InferredOntologyGenerator;
 import org.semanticweb.owlapi.util.OWLAPIStreamUtils;
 import org.semanticweb.owlapi.util.OWLEntityRemover;
 import org.semanticweb.owlapi.util.OWLOntologyMerger;
 import org.semanticweb.owlapi.util.SimpleIRIMapper;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
+
+import com.clarkparsia.owlapi.explanation.BlackBoxExplanation;
+import com.clarkparsia.owlapi.explanation.HSTExplanationGenerator;
 
 import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl;
 import uk.ac.manchester.cs.owl.owlapi.OWLDataPropertyImpl;
@@ -450,15 +462,16 @@ public class OWLOntologyWrapper {
 	 */
 	public Set<String> getIndividualClasses(String individualIRI, boolean includeSuperClasses) {
 		final Set<String> result = new TreeSet<>();
+		OWLNamedIndividual ind = factory.getOWLNamedIndividual(individualIRI, pm);
 		if (includeSuperClasses) {
-			final Set<OWLClass> types = reasoner.types(factory.getOWLNamedIndividual(individualIRI, pm)).collect(Collectors.toSet());
+			final Set<OWLClass> types = reasoner.types(ind).collect(Collectors.toSet());
 			for (OWLClass clazz : types)
 			if (!clazz.isAnonymous())
 				result.add(clazz.getIRI().getShortForm());
 		}
 		else {
 			for (OWLClassAssertionAxiom axiom : ontology.getAxioms(AxiomType.CLASS_ASSERTION)) {
-				if (axiom.getIndividual().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
+				if (axiom.getIndividual().equals(ind)) {
 					OWLClassImpl classExpression = (OWLClassImpl) axiom.getClassExpression();
 					if (!classExpression.isAnonymous()) {
 						result.add(((OWLClassImpl)classExpression.asOWLClass()).getIRI().getShortForm());
@@ -624,6 +637,140 @@ public class OWLOntologyWrapper {
 		}
 		return null;
 	}
+
+
+    /**
+     * Explain the ontology by providing insights into its structure and inconsistencies.
+     * @param ontology
+     * @author Adapted from HermiT's example
+     */
+    public void explain() {
+        
+        ReasonerFactory factory = new ReasonerFactory();
+        // We don't want HermiT to thrown an exception for inconsistent ontologies because then we 
+        // can't explain the inconsistency. This can be controlled via a configuration setting.  
+        Configuration configuration = new Configuration();
+        configuration.throwInconsistentOntologyException = false;
+        OWLReasoner reasoner = factory.createReasoner(ontology, configuration);
+        // Ok, here we go. Let's see why the ontology is inconsistent. 
+        System.out.println("Computing explanations for the inconsistency...");
+        factory = new ReasonerFactory() {
+            protected OWLReasoner createHermiTOWLReasoner(org.semanticweb.HermiT.Configuration configuration,OWLOntology ontology) {
+                // don't throw an exception since otherwise we cannot compte explanations 
+                configuration.throwInconsistentOntologyException=false;
+                return new Reasoner(configuration,ontology);
+            }  
+        };
+        // TODO: Implement different processing when there is a global inconsistency. Currently, a simple issue (wrong datatype for a single individual) produces all classes to print an explanation.
+        // I tried first with the global inconsistency (getExplanations(dataFactory.getOWLNothing()) but the resulting set was empty.
+        // I was also trying with the GlassBoxExplanation, but throws a null pointer exception
+/*        if (!reasoner.isConsistent()) {
+            ExplanationGeneratorFactory<OWLAxiom> genFac = ExplanationManager.createExplanationGeneratorFactory(factory, () -> ontology.getOWLOntologyManager());
+            ExplanationGenerator<OWLAxiom> gen = genFac.createExplanationGenerator(ontology);
+            OWLDataFactory dataFactory = ontology.getOWLOntologyManager().getOWLDataFactory();
+            Set<Explanation<OWLAxiom>> explanations = gen.getExplanations(dataFactory.getOWLSubClassOfAxiom(dataFactory.getOWLThing(), dataFactory.getOWLNothing()), 1);
+            for (Explanation<OWLAxiom> explanation : explanations) {
+                System.out.println("------------------");
+                System.out.println("Axioms causing the unsatisfiability: ");
+                for (OWLAxiom causingAxiom : explanation.getAxioms()) {
+                    System.out.println(" - " + causingAxiom);
+                }
+                System.out.println("------------------");
+            }
+        } 
+        else {*/
+            BlackBoxExplanation exp = new BlackBoxExplanation(ontology, factory, reasoner);
+            HSTExplanationGenerator multExplanator = new HSTExplanationGenerator(exp);
+            // Now we can get explanations for the inconsistency
+            //Set<Set<OWLAxiom>> explanations = multExplanator.getExplanations(dataFactory.getOWLNothing());
+            for (OWLClass cls : reasoner.getUnsatisfiableClasses()) {
+                if (!cls.isOWLNothing()) {
+                    Set<Set<OWLAxiom>> explanations = multExplanator.getExplanations(cls, 1);
+                    for (Set<OWLAxiom> explanation : explanations) {
+                        System.out.println("Explanation for " + cls + ":");
+                        explanation.forEach(ax -> System.out.println(" - " + ax));
+                    }
+                }
+            }
+        //}
+    }
+
+    public Set<OWLAxiom> getInferredAxioms() {
+        OWLReasonerFactory reasonerFactory = new ReasonerFactory(); // HermiT
+        OWLReasoner reasoner = reasonerFactory.createReasoner(ontology);
+
+        // Inference generator
+        InferredOntologyGenerator iog = new InferredOntologyGenerator(reasoner);
+
+        // Temporal ontology to store inferred axioms
+        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+        OWLDataFactory dataFactory = manager.getOWLDataFactory();
+        OWLOntology inferredOnt;
+        try {
+            inferredOnt = manager.createOntology();
+        } catch (OWLOntologyCreationException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            iog.fillOntology(dataFactory, inferredOnt);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        reasoner.dispose();
+
+        // Returns all inferred axioms
+        return inferredOnt.getAxioms();
+    }
+
+    public void replaceMin0ByOnlyRecursive() {
+        final OWLDataFactory factory = manager.getOWLDataFactory();
+        Set<OWLAxiom> axiomsToRemove = new HashSet<>();
+        Set<OWLAxiom> axiomsToAdd = new HashSet<>();
+
+        for (OWLSubClassOfAxiom ax : ontology.getAxioms(AxiomType.SUBCLASS_OF)) {
+            OWLClassExpression subCls = ax.getSubClass();
+            OWLClassExpression superCls = ax.getSuperClass();
+
+            OWLClassExpression newSuperCls = replaceMin0InExpression(superCls, factory);
+            if (!newSuperCls.equals(superCls)) {
+                axiomsToRemove.add(ax);
+                axiomsToAdd.add(factory.getOWLSubClassOfAxiom(subCls, newSuperCls));
+            }
+        }
+
+        manager.removeAxioms(ontology, axiomsToRemove);
+        manager.addAxioms(ontology, axiomsToAdd);
+    }
+
+    private OWLClassExpression replaceMin0InExpression(OWLClassExpression expr, OWLDataFactory factory) {
+        // Si es una restricción de min cardinality
+        if (expr instanceof OWLObjectMinCardinality) {
+            OWLObjectMinCardinality minCard = (OWLObjectMinCardinality) expr;
+            if (minCard.getCardinality() == 0) {
+                return factory.getOWLObjectAllValuesFrom(minCard.getProperty().asOWLObjectProperty(), minCard.getFiller());
+            }
+        }
+        else if (expr instanceof OWLDataMinCardinality) {
+            OWLDataMinCardinality minCard = (OWLDataMinCardinality) expr;
+            if (minCard.getCardinality() == 0) {
+                return factory.getOWLDataAllValuesFrom(minCard.getProperty().asOWLDataProperty(), minCard.getFiller());
+            }
+        }
+
+        // Si es una intersección, se procesa recursivamente cada operando
+        if (expr instanceof OWLObjectIntersectionOf) {
+            List<OWLClassExpression> newOperands = ((OWLObjectIntersectionOf) expr).getOperands().stream()
+                    .map(e -> replaceMin0InExpression(e, factory))
+                    .collect(Collectors.toList());
+            return factory.getOWLObjectIntersectionOf(newOperands);
+        }
+
+        // Si es unión, complemento, etc., se puede extender de forma similar
+        // Por ahora devolvemos el mismo si no se cumple nada
+        return expr;
+    }
 	
 	/**
 	 * Converts a camel case string to SNAKE_CASE.
