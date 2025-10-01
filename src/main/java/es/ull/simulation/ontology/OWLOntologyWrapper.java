@@ -18,7 +18,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.eclipse.rdf4j.model.vocabulary.OWL;
 import org.semanticweb.HermiT.Configuration;
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.HermiT.Reasoner;
