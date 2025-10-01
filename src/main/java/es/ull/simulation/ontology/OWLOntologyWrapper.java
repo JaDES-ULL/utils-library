@@ -4,6 +4,10 @@
 package es.ull.simulation.ontology;
 
 import java.io.File;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,6 +18,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.eclipse.rdf4j.model.vocabulary.OWL;
 import org.semanticweb.HermiT.Configuration;
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.HermiT.Reasoner;
@@ -113,6 +118,23 @@ public class OWLOntologyWrapper {
 	 */
 	public OWLOntologyWrapper(String path, String prefix, String... localMappings) throws OWLOntologyCreationException {
 		this(new File(path), prefix, localMappings);
+	}
+
+	/**
+	 * Creates a wrapper for the ontology with the specified IRI
+	 * @param iri The IRI of the ontology
+	 * @param prefix The prefix to use for the ontology
+	 * @throws OWLOntologyCreationException If the ontology cannot be opened
+	 */
+	public OWLOntologyWrapper(IRI iri, String prefix) throws OWLOntologyCreationException {
+		manager = OWLManager.createOWLOntologyManager();
+		ontology = manager.loadOntology(iri);
+		pm = new DefaultPrefixManager(prefix);
+		factory = manager.getOWLDataFactory();
+		OWLReasonerFactory reasonerFactory = new StructuralReasonerFactory();
+		reasoner = reasonerFactory.createReasoner(ontology);
+		// Ask the reasoner to do all the necessary work now
+		reasoner.precomputeInferences();
 	}
 
 	/**
@@ -917,12 +939,31 @@ public class OWLOntologyWrapper {
 	
 	public static void main(String[] args) {
 		if (args.length < 3) {
-			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file> <prefix> <mode>");
+			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file/IRI> <prefix> <mode>");
 			System.out.println("Mode can be 1 to print individuals, 2 to print classes and properties to be used in an enum");
 			return;
 		}
+		boolean isURI = true;
+		OWLOntologyWrapper wrapper = null;
 		try {
-			OWLOntologyWrapper wrapper = new OWLOntologyWrapper(args[0], args[1]);
+			new URI(args[0]);
+		} catch (Exception e) {
+			isURI = false;
+		}
+		
+		try {
+			if (isURI) {
+				IRI iri = IRI.create(args[0]);
+				wrapper = new OWLOntologyWrapper(iri, args[1]);
+			}
+			else {
+				final Path path = Paths.get(args[0]);
+				if (!Files.exists(path) || !Files.isRegularFile(path)) {
+					System.err.println("The specified ontology file does not exist or is not a regular file: " + args[0]);
+					return;
+				}
+				wrapper = new OWLOntologyWrapper(args[0], args[1]);
+			}
 			int mode = Integer.parseInt(args[2]);
 			switch (mode) {
 				case 1:
