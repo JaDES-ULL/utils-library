@@ -22,6 +22,7 @@ import org.semanticweb.HermiT.Configuration;
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
 import org.semanticweb.owlapi.model.AddAxiom;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
@@ -34,6 +35,7 @@ import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDataMinCardinality;
 import org.semanticweb.owlapi.model.OWLDataProperty;
 import org.semanticweb.owlapi.model.OWLDataPropertyAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLLiteral;
@@ -85,11 +87,10 @@ public class OWLOntologyWrapper {
     /**
 	 * Creates a wrapper for the ontology in the file
 	 * @param file The file with the ontology 
-	 * @param prefix The prefix to use for the ontology
 	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
-	public OWLOntologyWrapper(File file, String prefix, String... localMappings) throws OWLOntologyCreationException {
+	public OWLOntologyWrapper(File file, String... localMappings) throws OWLOntologyCreationException {
 		manager = OWLManager.createOWLOntologyManager();
 		if (localMappings.length > 0) {
 			for (String mapping : localMappings) {
@@ -100,7 +101,17 @@ public class OWLOntologyWrapper {
 			}
 		}
 		ontology = manager.loadOntologyFromOntologyDocument(file);
-        pm = new DefaultPrefixManager(prefix);
+		pm = new DefaultPrefixManager();
+		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+
+		if (format != null && format.isPrefixOWLDocumentFormat()) {
+			PrefixDocumentFormat prefixFormat = format.asPrefixOWLDocumentFormat();
+
+			// Copiar todos los prefijos al DefaultPrefixManager
+			prefixFormat.getPrefixName2PrefixMap().forEach((name, prefIRI) -> {
+				pm.setPrefix(name, prefIRI);
+			});
+		}		
         factory = manager.getOWLDataFactory();
         OWLReasonerFactory reasonerFactory = new StructuralReasonerFactory();
         reasoner = reasonerFactory.createReasoner(ontology);
@@ -111,24 +122,33 @@ public class OWLOntologyWrapper {
 	/**
 	 * Creates a wrapper for the ontology in the file with the specified path
 	 * @param path Path to the file with the ontology
-	 * @param prefix The prefix to use for the ontology
 	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
-	public OWLOntologyWrapper(String path, String prefix, String... localMappings) throws OWLOntologyCreationException {
-		this(new File(path), prefix, localMappings);
+	public OWLOntologyWrapper(String path, String... localMappings) throws OWLOntologyCreationException {
+		this(new File(path), localMappings);
 	}
 
 	/**
 	 * Creates a wrapper for the ontology with the specified IRI
 	 * @param iri The IRI of the ontology
-	 * @param prefix The prefix to use for the ontology
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
-	public OWLOntologyWrapper(IRI iri, String prefix) throws OWLOntologyCreationException {
+	public OWLOntologyWrapper(IRI iri) throws OWLOntologyCreationException {
 		manager = OWLManager.createOWLOntologyManager();
 		ontology = manager.loadOntology(iri);
-		pm = new DefaultPrefixManager(prefix);
+		pm = new DefaultPrefixManager();
+		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+
+		if (format != null && format.isPrefixOWLDocumentFormat()) {
+			PrefixDocumentFormat prefixFormat = format.asPrefixOWLDocumentFormat();
+
+			// Copiar todos los prefijos al DefaultPrefixManager
+			prefixFormat.getPrefixName2PrefixMap().forEach((name, prefIRI) -> {
+				pm.setPrefix(name, prefIRI);
+			});
+		}		
+		
 		factory = manager.getOWLDataFactory();
 		OWLReasonerFactory reasonerFactory = new StructuralReasonerFactory();
 		reasoner = reasonerFactory.createReasoner(ontology);
@@ -937,8 +957,8 @@ public class OWLOntologyWrapper {
 	}
 	
 	public static void main(String[] args) {
-		if (args.length < 3) {
-			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file/IRI> <prefix> <mode>");
+		if (args.length < 2) {
+			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file/IRI> <mode>");
 			System.out.println("Mode can be 1 to print individuals, 2 to print classes and properties to be used in an enum");
 			return;
 		}
@@ -953,7 +973,7 @@ public class OWLOntologyWrapper {
 		try {
 			if (isURI) {
 				IRI iri = IRI.create(args[0]);
-				wrapper = new OWLOntologyWrapper(iri, args[1]);
+				wrapper = new OWLOntologyWrapper(iri);
 			}
 			else {
 				final Path path = Paths.get(args[0]);
@@ -961,9 +981,9 @@ public class OWLOntologyWrapper {
 					System.err.println("The specified ontology file does not exist or is not a regular file: " + args[0]);
 					return;
 				}
-				wrapper = new OWLOntologyWrapper(args[0], args[1]);
+				wrapper = new OWLOntologyWrapper(args[0]);
 			}
-			int mode = Integer.parseInt(args[2]);
+			int mode = Integer.parseInt(args[1]);
 			switch (mode) {
 				case 1:
 					wrapper.printTabulatedIndividuals();
