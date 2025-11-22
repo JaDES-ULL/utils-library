@@ -78,11 +78,27 @@ import uk.ac.manchester.cs.owl.owlapi.OWLObjectPropertyImpl;
  *
  */
 public class OWLOntologyWrapper {
+	/** 
+	 * The OWL ontology manager 
+	 */
 	protected final OWLOntologyManager manager;
+	/** 
+	 * The OWL ontology 
+	 */
 	protected OWLOntology ontology;
+	/** 
+	 * The prefix manager for the ontology 
+	 */
 	protected final PrefixManager pm;
+	/**
+	 * The OWL data factory
+	 */
     protected final OWLDataFactory factory;
+	/**
+	 * The OWL reasoner
+	 */
     protected final OWLReasoner reasoner;
+
 
     /**
 	 * Creates a wrapper for the ontology in the file
@@ -91,16 +107,42 @@ public class OWLOntologyWrapper {
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
 	public OWLOntologyWrapper(File file, String... localMappings) throws OWLOntologyCreationException {
-		manager = OWLManager.createOWLOntologyManager();
-		if (localMappings.length > 0) {
-			for (String mapping : localMappings) {
-				String[] parts = mapping.split("=");
-				if (parts.length == 2) {
-					addLocalIRIMapper(parts[0], parts[1]);
-				}
-			}
-		}
-		ontology = manager.loadOntologyFromOntologyDocument(file);
+		this(OWLOntologyLoader.fromFile(file, localMappings));
+    }
+
+	/**
+	 * Creates a wrapper for the ontology in the file with the specified path
+	 * @param path Path to the file with the ontology
+	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
+	 * @throws OWLOntologyCreationException If the ontology cannot be opened
+	 */
+	public OWLOntologyWrapper(String path, String... localMappings) throws OWLOntologyCreationException {
+		this(OWLOntologyLoader.fromFile(path, localMappings));
+	}
+
+	/**
+	 * Creates a wrapper for the ontology with the specified IRI
+	 * @param iri The IRI of the ontology
+	 * @throws OWLOntologyCreationException If the ontology cannot be opened
+	 */
+	public OWLOntologyWrapper(IRI iri) throws OWLOntologyCreationException {
+		this(OWLOntologyLoader.fromIRI(iri));
+	}
+
+	private OWLOntologyWrapper(OWLOntologyLoader loader) throws OWLOntologyCreationException {
+		this(loader.getManager(), loader.getOntology());
+	}
+
+	/**
+	 * 
+	 * @param file
+	 * @param localMappings
+	 * @throws OWLOntologyCreationException
+	 */
+	public OWLOntologyWrapper(OWLOntologyManager manager, OWLOntology ontology) throws OWLOntologyCreationException {
+		this.manager = manager;
+		this.ontology = ontology;
+
 		pm = new DefaultPrefixManager();
 		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
 
@@ -117,44 +159,8 @@ public class OWLOntologyWrapper {
         reasoner = reasonerFactory.createReasoner(ontology);
         // Ask the reasoner to do all the necessary work now
         reasoner.precomputeInferences();
-    }
-
-	/**
-	 * Creates a wrapper for the ontology in the file with the specified path
-	 * @param path Path to the file with the ontology
-	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
-	 */
-	public OWLOntologyWrapper(String path, String... localMappings) throws OWLOntologyCreationException {
-		this(new File(path), localMappings);
 	}
 
-	/**
-	 * Creates a wrapper for the ontology with the specified IRI
-	 * @param iri The IRI of the ontology
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
-	 */
-	public OWLOntologyWrapper(IRI iri) throws OWLOntologyCreationException {
-		manager = OWLManager.createOWLOntologyManager();
-		ontology = manager.loadOntology(iri);
-		pm = new DefaultPrefixManager();
-		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
-
-		if (format != null && format.isPrefixOWLDocumentFormat()) {
-			PrefixDocumentFormat prefixFormat = format.asPrefixOWLDocumentFormat();
-
-			// Copiar todos los prefijos al DefaultPrefixManager
-			prefixFormat.getPrefixName2PrefixMap().forEach((name, prefIRI) -> {
-				pm.setPrefix(name, prefIRI);
-			});
-		}		
-		
-		factory = manager.getOWLDataFactory();
-		OWLReasonerFactory reasonerFactory = new StructuralReasonerFactory();
-		reasoner = reasonerFactory.createReasoner(ontology);
-		// Ask the reasoner to do all the necessary work now
-		reasoner.precomputeInferences();
-	}
 
 	/**
 	 * Returns the ontology
