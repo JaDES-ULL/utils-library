@@ -4,6 +4,9 @@
 package es.ull.simulation.ontology;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,9 +17,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
 
 import org.semanticweb.HermiT.Configuration;
 import org.semanticweb.HermiT.ReasonerFactory;
@@ -81,33 +87,38 @@ public class OWLOntologyWrapper {
 	/** 
 	 * The OWL ontology manager 
 	 */
+	@Nonnull
 	protected final OWLOntologyManager manager;
 	/** 
 	 * The OWL ontology 
 	 */
+	@Nonnull
 	protected OWLOntology ontology;
 	/** 
 	 * The prefix manager for the ontology 
 	 */
+	@Nonnull
 	protected final PrefixManager pm;
 	/**
 	 * The OWL data factory
 	 */
+	@Nonnull
     protected final OWLDataFactory factory;
 	/**
 	 * The OWL reasoner
 	 */
+    @Nonnull
     protected final OWLReasoner reasoner;
 
 
     /**
-	 * Creates a wrapper for the ontology in the file
-	 * @param file The file with the ontology 
+	 * Creates a wrapper for the ontology in the input stream
+	 * @param inputStream The input stream with the ontology 
 	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
-	public OWLOntologyWrapper(File file, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromFile(file, localMappings));
+	public OWLOntologyWrapper(InputStream inputStream, String... localMappings) throws OWLOntologyCreationException {
+		this(OWLOntologyLoader.fromStream(inputStream, localMappings));
     }
 
 	/**
@@ -117,7 +128,7 @@ public class OWLOntologyWrapper {
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
 	public OWLOntologyWrapper(String path, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromFile(path, localMappings));
+		this(OWLOntologyLoader.fromPath(path, localMappings));
 	}
 
 	/**
@@ -140,8 +151,8 @@ public class OWLOntologyWrapper {
 	 * @throws OWLOntologyCreationException
 	 */
 	public OWLOntologyWrapper(OWLOntologyManager manager, OWLOntology ontology) throws OWLOntologyCreationException {
-		this.manager = manager;
-		this.ontology = ontology;
+		this.manager = Objects.requireNonNull(manager, "OWL Ontology Manager should never be null");
+		this.ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
 
 		pm = new DefaultPrefixManager();
 		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
@@ -151,12 +162,12 @@ public class OWLOntologyWrapper {
 
 			// Copiar todos los prefijos al DefaultPrefixManager
 			prefixFormat.getPrefixName2PrefixMap().forEach((name, prefIRI) -> {
-				pm.setPrefix(name, prefIRI);
+				pm.setPrefix(Objects.requireNonNull(name, "Prefix name should never be null"), Objects.requireNonNull(prefIRI, "Prefix IRI should never be null"));
 			});
 		}		
-        factory = manager.getOWLDataFactory();
+        factory = Objects.requireNonNull(manager.getOWLDataFactory(), "OWL Data Factory should never be null");
         OWLReasonerFactory reasonerFactory = new StructuralReasonerFactory();
-        reasoner = reasonerFactory.createReasoner(ontology);
+        reasoner = Objects.requireNonNull(reasonerFactory.createReasoner(ontology), "OWL Reasoner should never be null");
         // Ask the reasoner to do all the necessary work now
         reasoner.precomputeInferences();
 	}
@@ -184,19 +195,20 @@ public class OWLOntologyWrapper {
 	 * @param path The path to the local file
 	 */
 	public void addLocalIRIMapper(String iri, String path) {
-		IRI schemaIRI = IRI.create(iri);
-		File schemaFile = new File(path);
+		IRI schemaIRI = IRI.create(Objects.requireNonNull(iri, "IRI should never be null"));
+		File schemaFile = Objects.requireNonNull(new File(path), "File should never be null");
 		manager.getIRIMappers().add(new SimpleIRIMapper(schemaIRI, IRI.create(schemaFile)));		
 	}
 
 	/**
 	 * Merges another ontology with a previously loaded one
-	 * @param file The file containing the ontology to merge
+	 * @param inputStream The input stream containing the ontology to merge
 	 * @throws OWLOntologyCreationException If the ontology cannot be merged
 	 */
-	public void mergeOtherOntology(File file) throws OWLOntologyCreationException {
-		final OWLOntology otherOntology = manager.loadOntologyFromOntologyDocument(file);
-		ontology = new OWLOntologyMerger(manager).createMergedOntology(manager, IRI.create(otherOntology.getOntologyID().getOntologyIRI().get() + "-merged"));
+	public void mergeOtherOntology(InputStream inputStream) throws OWLOntologyCreationException {
+		final OWLOntology otherOntology = manager.loadOntologyFromOntologyDocument(Objects.requireNonNull(inputStream, "InputStream should never be null"));
+		final IRI mergedIRI = Objects.requireNonNull(IRI.create(otherOntology.getOntologyID().getOntologyIRI().get() + "-merged"), "Merged IRI should never be null");
+		ontology = Objects.requireNonNull(new OWLOntologyMerger(manager).createMergedOntology(manager, mergedIRI), "Merged ontology should never be null");
 	}
 
 	/**
@@ -205,7 +217,11 @@ public class OWLOntologyWrapper {
 	 * @throws OWLOntologyCreationException If the ontology cannot be merged
 	 */
 	public void mergeOtherOntology(String path) throws OWLOntologyCreationException {
-		this.mergeOtherOntology(new File(path));
+		try {
+			this.mergeOtherOntology(new FileInputStream(path));
+		} catch (FileNotFoundException e) {
+			throw new OWLOntologyCreationException("The ontology file was not found: " + path, e);
+		}
 	}
 
 	/**

@@ -19,24 +19,25 @@ public class PrefixManagerBuilder {
         AtomicInteger counter = new AtomicInteger(1);
 
         for (OWLOntology ont : root.importsClosure().toList()) {
-
+            OWLOntology safeOntology = Objects.requireNonNull(ont, "ont should not be null");
             // Obtener el formato moderno
-            OWLDocumentFormat format = manager.getOntologyFormat(ont);
+            OWLDocumentFormat format = manager.getOntologyFormat(safeOntology);
 
             // 1. Prefijos declarados
             if (format instanceof PrefixDocumentFormat) {
                 PrefixDocumentFormat prefixFormat = (PrefixDocumentFormat) format;
                 prefixFormat.getPrefixName2PrefixMap().forEach((prefix, iri) -> {
+                    String safeIRI = Objects.requireNonNull(iri, "iri should not be null");
                     String unique = uniquePrefix(prefix.replace(":", ""), usedPrefixes) + ":";
-                    pm.setPrefix(unique, iri);
-                    usedPrefixes.put(unique, iri);
+                    pm.setPrefix(unique, safeIRI);
+                    usedPrefixes.put(unique, safeIRI);
                 });
             }
 
             // 2. Si no hay prefijos, detectar namespace a partir de entidades
             if (!(format instanceof PrefixDocumentFormat) || ((PrefixDocumentFormat) format).getPrefixName2PrefixMap().isEmpty()) {
-                String namespace = detectNamespaceFromEntities(ont)
-                        .orElse(ont.getOntologyID().getOntologyIRI().map(i -> i + "#").orElse("urn:default#"));
+                String namespace = Objects.requireNonNull(detectNamespaceFromEntities(safeOntology)
+                        .orElse(safeOntology.getOntologyID().getOntologyIRI().map(i -> i + "#").orElse("urn:default#")), "namespace should not be null");
 
                 String candidate = "ns" + counter.getAndIncrement();
                 String unique = uniquePrefix(candidate, usedPrefixes) + ":";

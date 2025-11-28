@@ -1,6 +1,10 @@
 package es.ull.simulation.ontology;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.Objects;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
@@ -49,28 +53,34 @@ public class OWLOntologyLoader {
     }
 
     /**
-     * Loads an ontology from a file with optional local IRI mappings
-     * @param file The ontology file
-     * @param localMappings The local mappings in the form IRI=localPath
-     * @return an OWLOntologyLoader instance
-     * @throws OWLOntologyCreationException if there is an error loading the ontology
-     */
-    public static OWLOntologyLoader fromFile(File file, String... localMappings) throws OWLOntologyCreationException {
-		final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-		addLocalIRIMappers(manager, localMappings);
-		final OWLOntology ontology = manager.loadOntologyFromOntologyDocument(file);
-        return new OWLOntologyLoader(manager, ontology);
-    }
-
-    /**
      * Loads an ontology from a file path with optional local IRI mappings
      * @param filePath The path to the ontology file
      * @param localMappings The local mappings in the form IRI=localPath
      * @return an OWLOntologyLoader instance
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
-    public static OWLOntologyLoader fromFile(String filePath, String... localMappings) throws OWLOntologyCreationException {
-        return fromFile(new File(filePath), localMappings);
+    public static OWLOntologyLoader fromPath(String filePath, String... localMappings) throws OWLOntologyCreationException {
+        Objects.requireNonNull(filePath, "File path should never be null");
+        try {
+            return fromStream(new FileInputStream(filePath), localMappings);
+        } catch (FileNotFoundException e) {
+            throw new OWLOntologyCreationException("The ontology file was not found: " + filePath, e);
+        }
+    }
+
+    /**
+     * Loads an ontology from an InputStream with optional local IRI mappings
+     * @param inputStream The InputStream containing the ontology
+     * @param localMappings The local mappings in the form IRI=localPath
+     * @return an OWLOntologyLoader instance
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public static OWLOntologyLoader fromStream(InputStream inputStream, String... localMappings) throws OWLOntologyCreationException {
+        Objects.requireNonNull(inputStream, "InputStream should never be null");
+        final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+        addLocalIRIMappers(manager, localMappings);
+        final OWLOntology ontology = manager.loadOntologyFromOntologyDocument(inputStream);
+        return new OWLOntologyLoader(manager, ontology);
     }
     
     /**
@@ -81,6 +91,7 @@ public class OWLOntologyLoader {
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
     public static OWLOntologyLoader fromIRI(IRI iri, String... localMappings) throws OWLOntologyCreationException {
+        Objects.requireNonNull(iri, "IRI should never be null");
         final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         addLocalIRIMappers(manager, localMappings);
         final OWLOntology ontology = manager.loadOntology(iri);
@@ -97,9 +108,15 @@ public class OWLOntologyLoader {
 			for (String mapping : localMappings) {
 				String[] parts = mapping.split("=");
 				if (parts.length == 2) {
-                    IRI schemaIRI = IRI.create(parts[0]);
-                    File schemaFile = new File(parts[1]);
-                    manager.getIRIMappers().add(new SimpleIRIMapper(schemaIRI, IRI.create(schemaFile)));		
+                    IRI schemaIRI = IRI.create(Objects.requireNonNull(parts[0], "IRI in local mapping should never be null"));
+                    File schemaFile = new File(Objects.requireNonNull(parts[1], "Local path in local mapping should never be null"));
+                    if (schemaFile.exists() == false) {
+                        throw new IllegalArgumentException("The local path in the mapping does not exist: " + schemaFile.getAbsolutePath());
+                    }
+                    manager.getIRIMappers().add(
+                        new SimpleIRIMapper(
+                            Objects.requireNonNull(schemaIRI, "Schema IRI should never be null"), 
+                            Objects.requireNonNull(IRI.create(schemaFile), "Schema file IRI should never be null")));		
 				}
 			}
 		}
