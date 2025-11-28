@@ -17,10 +17,6 @@ import org.semanticweb.owlapi.util.SimpleIRIMapper;
  * A class to load OWL ontologies from files or IRIs with optional local IRI mappings
  */
 public class OWLOntologyLoader {
-	/** 
-	 * The OWL ontology manager 
-	 */
-	private final OWLOntologyManager manager;
     /** 
 	 * The OWL ontology 
 	 */
@@ -28,11 +24,9 @@ public class OWLOntologyLoader {
 
     /**
      * Private constructor to enforce the use of static factory methods
-     * @param manager The OWL ontology manager
      * @param ontology The OWL ontology
      */
-    private OWLOntologyLoader(OWLOntologyManager manager, OWLOntology ontology) {
-        this.manager = manager;
+    private OWLOntologyLoader(OWLOntology ontology) {
         this.ontology = ontology;
     }
 
@@ -41,7 +35,7 @@ public class OWLOntologyLoader {
      * @return the OWL ontology manager
      */
     public OWLOntologyManager getManager() {
-        return manager;
+        return ontology.getOWLOntologyManager();
     }
 
     /**
@@ -60,12 +54,9 @@ public class OWLOntologyLoader {
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
     public static OWLOntologyLoader fromPath(String filePath, String... localMappings) throws OWLOntologyCreationException {
-        Objects.requireNonNull(filePath, "File path should never be null");
-        try {
-            return fromStream(new FileInputStream(filePath), localMappings);
-        } catch (FileNotFoundException e) {
-            throw new OWLOntologyCreationException("The ontology file was not found: " + filePath, e);
-        }
+        final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+        addLocalIRIMappers(manager, localMappings);
+        return fromPath(filePath, manager);
     }
 
     /**
@@ -76,11 +67,9 @@ public class OWLOntologyLoader {
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
     public static OWLOntologyLoader fromStream(InputStream inputStream, String... localMappings) throws OWLOntologyCreationException {
-        Objects.requireNonNull(inputStream, "InputStream should never be null");
         final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         addLocalIRIMappers(manager, localMappings);
-        final OWLOntology ontology = manager.loadOntologyFromOntologyDocument(inputStream);
-        return new OWLOntologyLoader(manager, ontology);
+        return fromStream(inputStream, manager);
     }
     
     /**
@@ -91,11 +80,51 @@ public class OWLOntologyLoader {
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
     public static OWLOntologyLoader fromIRI(IRI iri, String... localMappings) throws OWLOntologyCreationException {
-        Objects.requireNonNull(iri, "IRI should never be null");
         final OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         addLocalIRIMappers(manager, localMappings);
+        return fromIRI(iri, manager);
+    }
+
+    /**
+     * Loads an ontology from a file path with optional local IRI mappings
+     * @param filePath The path to the ontology file
+     * @param manager A previously created OWL ontology manager
+     * @return an OWLOntologyLoader instance
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public static OWLOntologyLoader fromPath(String filePath, OWLOntologyManager manager) throws OWLOntologyCreationException {
+        Objects.requireNonNull(filePath, "File path should never be null");
+        try {
+            return fromStream(new FileInputStream(filePath), manager);
+        } catch (FileNotFoundException e) {
+            throw new OWLOntologyCreationException("The ontology file was not found: " + filePath, e);
+        }
+    }
+
+    /**
+     * Loads an ontology from an InputStream with optional local IRI mappings
+     * @param inputStream The InputStream containing the ontology
+     * @param manager A previously created OWL ontology manager
+     * @return an OWLOntologyLoader instance
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public static OWLOntologyLoader fromStream(InputStream inputStream, OWLOntologyManager manager) throws OWLOntologyCreationException {
+        Objects.requireNonNull(inputStream, "InputStream should never be null");
+        final OWLOntology ontology = manager.loadOntologyFromOntologyDocument(inputStream);
+        return new OWLOntologyLoader(ontology);
+    }
+    
+    /**
+     * Loads an ontology from an IRI with optional local IRI mappings
+     * @param iri The IRI of the ontology
+     * @param manager A previously created OWL ontology manager
+     * @return an OWLOntologyLoader instance
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public static OWLOntologyLoader fromIRI(IRI iri, OWLOntologyManager manager) throws OWLOntologyCreationException {
+        Objects.requireNonNull(iri, "IRI should never be null");
         final OWLOntology ontology = manager.loadOntology(iri);
-        return new OWLOntologyLoader(manager, ontology);
+        return new OWLOntologyLoader(ontology);
     }
 
 	/**

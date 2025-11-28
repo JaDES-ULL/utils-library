@@ -268,4 +268,21 @@ public class OntologyTest {
         assertNotNull("The class " + TEST_MODEL_CLASS + " should exist", ontologyWrapper.getOWLClassIfExists(TEST_MODEL_CLASS));
         assertNotNull("The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist", ontologyWrapper.getOWLIndividualIfExists(TEST_PRELOADED_DISEASE_INDIVIDUAL));
     }
+
+    @Test
+    public void testOntologyDoubleLoading() throws OWLOntologyCreationException {
+        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(getClass().getResourceAsStream(SCHEMA_FILE));
+        debugPrint("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
+
+        ontologyWrapper.addOntology(getClass().getResourceAsStream(DATA_FILE));
+        final OWLOntology mergedOntology = ontologyWrapper.getOntology();
+        debugPrint("Another ontology loaded. New ontology: " + mergedOntology.getOntologyID());
+        // Mostrar individuos en la ontología mergeada
+        mergedOntology.individualsInSignature().forEach(ind -> debugPrint(" - " + ind));
+        assertNotNull("The class " + TEST_MODEL_CLASS + " should exist", ontologyWrapper.getOWLClassIfExists(TEST_MODEL_CLASS));
+        assertNotNull("The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist", ontologyWrapper.getOWLIndividualIfExists(TEST_PRELOADED_DISEASE_INDIVIDUAL));
+        Set<String> diseaseClasses = ontologyWrapper.getIndividualClasses(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        debugPrint("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
+        diseaseClasses.forEach(c -> debugPrint(" - " + c));
+    }
 }

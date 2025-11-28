@@ -105,11 +105,15 @@ public class OWLOntologyWrapper {
 	@Nonnull
     protected final OWLDataFactory factory;
 	/**
+	 * The OWL reasoner factory
+	 */
+	@Nonnull
+	protected final OWLReasonerFactory reasonerFactory;
+	/**
 	 * The OWL reasoner
 	 */
     @Nonnull
-    protected final OWLReasoner reasoner;
-
+    protected OWLReasoner reasoner;
 
     /**
 	 * Creates a wrapper for the ontology in the input stream
@@ -134,24 +138,24 @@ public class OWLOntologyWrapper {
 	/**
 	 * Creates a wrapper for the ontology with the specified IRI
 	 * @param iri The IRI of the ontology
+	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
 	 * @throws OWLOntologyCreationException If the ontology cannot be opened
 	 */
-	public OWLOntologyWrapper(IRI iri) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromIRI(iri));
+	public OWLOntologyWrapper(IRI iri, String... localMappings) throws OWLOntologyCreationException {
+		this(OWLOntologyLoader.fromIRI(iri, localMappings));
 	}
 
 	private OWLOntologyWrapper(OWLOntologyLoader loader) throws OWLOntologyCreationException {
-		this(loader.getManager(), loader.getOntology());
+		this(loader.getOntology());
 	}
 
 	/**
 	 * 
-	 * @param file
-	 * @param localMappings
+	 * @param ontology The OWL ontology
 	 * @throws OWLOntologyCreationException
 	 */
-	public OWLOntologyWrapper(OWLOntologyManager manager, OWLOntology ontology) throws OWLOntologyCreationException {
-		this.manager = Objects.requireNonNull(manager, "OWL Ontology Manager should never be null");
+	public OWLOntologyWrapper(OWLOntology ontology) throws OWLOntologyCreationException {
+		this.manager = ontology.getOWLOntologyManager();
 		this.ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
 
 		pm = new DefaultPrefixManager();
@@ -166,12 +170,11 @@ public class OWLOntologyWrapper {
 			});
 		}		
         factory = Objects.requireNonNull(manager.getOWLDataFactory(), "OWL Data Factory should never be null");
-        OWLReasonerFactory reasonerFactory = new StructuralReasonerFactory();
+        this.reasonerFactory = new StructuralReasonerFactory();
         reasoner = Objects.requireNonNull(reasonerFactory.createReasoner(ontology), "OWL Reasoner should never be null");
         // Ask the reasoner to do all the necessary work now
         reasoner.precomputeInferences();
 	}
-
 
 	/**
 	 * Returns the ontology
@@ -179,6 +182,48 @@ public class OWLOntologyWrapper {
 	 */
 	public OWLOntology getOntology() {
 		return ontology;
+	}
+
+	/**
+	 * Sets the main ontology
+	 * @param ontology The ontology to set
+	 */
+	public void setOntology(OWLOntology ontology) {
+		this.ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
+		this.reasoner = Objects.requireNonNull(reasonerFactory.createReasoner(ontology), "OWL Reasoner should never be null");
+		// Ask the reasoner to do all the necessary work now
+		reasoner.precomputeInferences();
+	}
+
+	/**
+	 * Adds an ontology from the specified IRI. The new ontology becomes the main ontology handled by this wrapper.
+	 * @param iri The IRI of the new ontology
+	 * @throws OWLOntologyCreationException 
+	 */
+	public void addOntology(IRI iri) throws OWLOntologyCreationException {
+		setOntology(manager.loadOntology(Objects.requireNonNull(iri, "IRI should never be null")));
+	}
+
+	/**
+	 * Adds an ontology from the specified input stream. The new ontology becomes the main ontology handled by this wrapper.
+	 * @param inputStream The input stream containing the ontology
+	 * @throws OWLOntologyCreationException 
+	 */
+	public void addOntology(InputStream inputStream) throws OWLOntologyCreationException {
+		setOntology(manager.loadOntologyFromOntologyDocument(Objects.requireNonNull(inputStream, "InputStream should never be null")));
+	}
+
+	/**
+	 * Adds an ontology from the specified file. The new ontology becomes the main ontology handled by this wrapper.
+	 * @param path The path to the file containing the ontology
+	 * @throws OWLOntologyCreationException 
+	 */
+	public void addOntology(String path) throws OWLOntologyCreationException {
+		try {
+			this.addOntology(new FileInputStream(path));
+		} catch (FileNotFoundException e) {
+			throw new OWLOntologyCreationException("The ontology file was not found: " + path, e);
+		}
 	}
 
 	/**
@@ -533,7 +578,7 @@ public class OWLOntologyWrapper {
 				result.add(clazz.getIRI().getShortForm());
 		}
 		else {
-			for (OWLClassAssertionAxiom axiom : ontology.getAxioms(AxiomType.CLASS_ASSERTION)) {
+			for (OWLClassAssertionAxiom axiom : ontology.getAxioms(AxiomType.CLASS_ASSERTION, Imports.INCLUDED)) {
 				if (axiom.getIndividual().equals(ind)) {
 					OWLClassImpl classExpression = (OWLClassImpl) axiom.getClassExpression();
 					if (!classExpression.isAnonymous()) {
