@@ -9,6 +9,7 @@ import es.ull.simulation.ontology.OWLOntologyWrapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -30,6 +31,7 @@ public class OntologyTest {
     private final static String REMOTE_TEST_DATAITEMTYPE_CLASS = "DataItemType";
     private final static String REMOTE_TEST_DATAITEMTYPE_INDIVIDUAL = "DI_StandardDeviation";
     private final static String DATA_FILE = "/sample-data.owl";
+    private final static String WRONG_DATA_FILE = "/wrong-sample-data.owl";
     private final static String TEST_DISEASE_CLASS = "Disease";
     private final static String TEST_SUPER_CLASS = "ModelElement";
     private final static String TEST_MODEL_CLASS = "SimulationModel";
@@ -284,5 +286,12 @@ public class OntologyTest {
         Set<String> diseaseClasses = ontologyWrapper.getIndividualClasses(TEST_PRELOADED_DISEASE_INDIVIDUAL);
         debugPrint("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
         diseaseClasses.forEach(c -> debugPrint(" - " + c));
+    }
+
+    @Test
+    public void testNonCompliantOntology() throws OWLOntologyCreationException {
+        assertThrows("Loading " + WRONG_DATA_FILE + ", which is a non-compliant ontology, should throw exception", OWLOntologyCreationException.class, () -> {
+            new OWLOntologyWrapper(getClass().getResourceAsStream(WRONG_DATA_FILE));
+        });
     }
 }

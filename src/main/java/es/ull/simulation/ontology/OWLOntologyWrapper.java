@@ -57,6 +57,9 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.PrefixManager;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.semanticweb.owlapi.profiles.OWL2DLProfile;
+import org.semanticweb.owlapi.profiles.OWLProfile;
+import org.semanticweb.owlapi.profiles.OWLProfileReport;
 import org.semanticweb.owlapi.reasoner.NodeSet;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
@@ -92,7 +95,6 @@ public class OWLOntologyWrapper {
 	/** 
 	 * The OWL ontology 
 	 */
-	@Nonnull
 	protected OWLOntology ontology;
 	/** 
 	 * The prefix manager for the ontology 
@@ -112,7 +114,6 @@ public class OWLOntologyWrapper {
 	/**
 	 * The OWL reasoner
 	 */
-    @Nonnull
     protected OWLReasoner reasoner;
 
     /**
@@ -156,24 +157,20 @@ public class OWLOntologyWrapper {
 	 */
 	public OWLOntologyWrapper(OWLOntology ontology) throws OWLOntologyCreationException {
 		this.manager = ontology.getOWLOntologyManager();
-		this.ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
+        this.reasonerFactory = new StructuralReasonerFactory();
+        this.factory = Objects.requireNonNull(manager.getOWLDataFactory(), "OWL Data Factory should never be null");
+		setOntology(Objects.requireNonNull(ontology, "OWL Ontology should never be null"));
 
-		pm = new DefaultPrefixManager();
+		this.pm = new DefaultPrefixManager();
 		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
 
 		if (format != null && format.isPrefixOWLDocumentFormat()) {
 			PrefixDocumentFormat prefixFormat = format.asPrefixOWLDocumentFormat();
-
-			// Copiar todos los prefijos al DefaultPrefixManager
+			// Copies the prefixes to the local prefix manager
 			prefixFormat.getPrefixName2PrefixMap().forEach((name, prefIRI) -> {
 				pm.setPrefix(Objects.requireNonNull(name, "Prefix name should never be null"), Objects.requireNonNull(prefIRI, "Prefix IRI should never be null"));
 			});
 		}		
-        factory = Objects.requireNonNull(manager.getOWLDataFactory(), "OWL Data Factory should never be null");
-        this.reasonerFactory = new StructuralReasonerFactory();
-        reasoner = Objects.requireNonNull(reasonerFactory.createReasoner(ontology), "OWL Reasoner should never be null");
-        // Ask the reasoner to do all the necessary work now
-        reasoner.precomputeInferences();
 	}
 
 	/**
@@ -185,11 +182,13 @@ public class OWLOntologyWrapper {
 	}
 
 	/**
-	 * Sets the main ontology
+	 * Sets the main ontology and checks that it complies with the OWL2 DL profile
 	 * @param ontology The ontology to set
+	 * @throws OWLOntologyCreationException If the ontology does not comply with the OWL2 DL profile
 	 */
-	public void setOntology(OWLOntology ontology) {
+	public void setOntology(OWLOntology ontology) throws OWLOntologyCreationException {
 		this.ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
+		checkProfile();
 		this.reasoner = Objects.requireNonNull(reasonerFactory.createReasoner(ontology), "OWL Reasoner should never be null");
 		// Ask the reasoner to do all the necessary work now
 		reasoner.precomputeInferences();
@@ -746,6 +745,15 @@ public class OWLOntologyWrapper {
 		return null;
 	}
 
+
+    public void checkProfile() throws OWLOntologyCreationException {
+        final OWLProfile profile = new OWL2DLProfile(); // o el perfil que te interese
+        final OWLProfileReport report = profile.checkOntology(ontology);
+
+        if (!report.isInProfile()) {
+            throw new OWLOntologyCreationException("Ontology does NOT comply with OWL 2 DL. Violations: " + report.getViolations().toString());
+        } 
+    }
 
     /**
      * Explain the ontology by providing insights into its structure and inconsistencies.
