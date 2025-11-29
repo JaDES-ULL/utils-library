@@ -440,7 +440,7 @@ public class OWLOntologyWrapper {
 	 */
 	public Set<String> individualsToString() {
 		final TreeSet<String> set = new TreeSet<>();
-		for (OWLNamedIndividual individual : ontology.getIndividualsInSignature()) {
+		for (OWLNamedIndividual individual : ontology.getIndividualsInSignature(Imports.INCLUDED)) {
 			set.add(individual.getIRI().getShortForm());
 		}
 		return set;
@@ -452,7 +452,7 @@ public class OWLOntologyWrapper {
 	 */
 	public Set<String> classesToString() {
 		final TreeSet<String> set = new TreeSet<>();
-		for (OWLClass clazz : ontology.getClassesInSignature()) {
+		for (OWLClass clazz : ontology.getClassesInSignature(Imports.INCLUDED)) {
 			set.add(clazz.getIRI().getShortForm());
 		}
 		return set;
@@ -464,7 +464,7 @@ public class OWLOntologyWrapper {
 	 */
 	public Set<String> dataPropertiesToString() {
 		final TreeSet<String> set = new TreeSet<>();
-		for (OWLDataProperty dataProp : ontology.getDataPropertiesInSignature()) {
+		for (OWLDataProperty dataProp : ontology.getDataPropertiesInSignature(Imports.INCLUDED)) {
 			set.add(dataProp.getIRI().getShortForm());
 		}
 		return set;
@@ -476,7 +476,7 @@ public class OWLOntologyWrapper {
 	 */
 	public Set<String> objectPropertiesToString() {
 		final TreeSet<String> set = new TreeSet<>();
-		for (OWLObjectProperty objectProp : ontology.getObjectPropertiesInSignature()) {
+		for (OWLObjectProperty objectProp : ontology.getObjectPropertiesInSignature(Imports.INCLUDED)) {
 			set.add(objectProp.getIRI().getShortForm());
 		}
 		return set;
@@ -498,7 +498,7 @@ public class OWLOntologyWrapper {
 	 * @return true if the ontology contains the specified individual
 	 */
 	public boolean containsIndividual(String individualIRI) {
-		return ontology.containsIndividualInSignature(factory.getOWLNamedIndividual(individualIRI, pm).getIRI());
+		return ontology.containsIndividualInSignature(factory.getOWLNamedIndividual(individualIRI, pm).getIRI(), Imports.INCLUDED);
 	}
 
 	/**
@@ -596,7 +596,7 @@ public class OWLOntologyWrapper {
 	 */
 	public ArrayList<String[]> getIndividualDataProperties(String individualIRI) {
 		final ArrayList<String[]> list = new ArrayList<>();
-		for (OWLDataPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.DATA_PROPERTY_ASSERTION)) {
+		for (OWLDataPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.DATA_PROPERTY_ASSERTION, Imports.INCLUDED)) {
 		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
 		        OWLDataPropertyImpl property = (OWLDataPropertyImpl) axiom.getProperty();
 		        list.add(new String[] {property.getIRI().getShortForm(), axiom.getObject().getLiteral()});
@@ -612,7 +612,7 @@ public class OWLOntologyWrapper {
 	 */
 	public ArrayList<String[]> getIndividualObjectProperties(String individualIRI) {
 		final ArrayList<String[]> list = new ArrayList<>();
-		for (OWLObjectPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION)) {
+		for (OWLObjectPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION, Imports.INCLUDED)) {
 		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
 		        OWLObjectPropertyImpl property = (OWLObjectPropertyImpl) axiom.getProperty();
 		        list.add(new String[] {property.getIRI().getShortForm(), ((OWLNamedIndividualImpl)axiom.getObject()).getIRI().getShortForm()});
@@ -733,11 +733,14 @@ public class OWLOntologyWrapper {
 			.findFirst()
 			.orElse(null);
 		if (entity != null) {
-			for (OWLAnnotation annotation : EntitySearcher.getAnnotations(entity, ontology).collect(Collectors.toList())) {
-				if (annotation.getProperty().isLabel() && annotation.getValue().asLiteral().isPresent()) {
-					OWLLiteral literal = annotation.getValue().asLiteral().get();
-					if (literal.hasLang(lang)) {
-						return literal.getLiteral();
+			for (OWLOntology o : ontology.getImportsClosure()) {
+				for (OWLAnnotation annotation :
+						EntitySearcher.getAnnotations(entity, o).collect(Collectors.toList())) {
+					if (annotation.getProperty().isLabel() && annotation.getValue().asLiteral().isPresent()) {
+						OWLLiteral literal = annotation.getValue().asLiteral().get();
+						if (literal.hasLang(lang)) {
+							return literal.getLiteral();
+						}
 					}
 				}
 			}
