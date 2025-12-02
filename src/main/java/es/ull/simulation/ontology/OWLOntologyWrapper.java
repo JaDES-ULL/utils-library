@@ -95,6 +95,7 @@ public class OWLOntologyWrapper {
 	/** 
 	 * The OWL ontology 
 	 */
+	@Nonnull
 	protected OWLOntology ontology;
 	/** 
 	 * The prefix manager for the ontology 
@@ -155,12 +156,13 @@ public class OWLOntologyWrapper {
 	 * @param ontology The OWL ontology
 	 * @throws OWLOntologyCreationException
 	 */
+	@SuppressWarnings("null")
 	public OWLOntologyWrapper(OWLOntology ontology) throws OWLOntologyCreationException {
-		this.manager = ontology.getOWLOntologyManager();
+		ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
+		this.manager = Objects.requireNonNull(ontology.getOWLOntologyManager(), "OWLOntologyManager should never be null");
         this.reasonerFactory = new StructuralReasonerFactory();
         this.factory = Objects.requireNonNull(manager.getOWLDataFactory(), "OWL Data Factory should never be null");
-		setOntology(Objects.requireNonNull(ontology, "OWL Ontology should never be null"));
-
+		setOntology(ontology);
 		this.pm = new DefaultPrefixManager();
 		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
 
@@ -352,7 +354,7 @@ public class OWLOntologyWrapper {
 	 * @return The OWLClass object for the specified class IRI
 	 */
 	public OWLClass getOWLClass(String classIRI) {
-		return factory.getOWLClass(classIRI, pm);
+		return factory.getOWLClass(Objects.requireNonNull(classIRI), pm);
 	}
 	
 	/**
@@ -361,7 +363,7 @@ public class OWLOntologyWrapper {
 	 * @return The OWLObjectProperty object for the specified object property IRI
 	 */
 	public OWLObjectProperty getOWLObjectProperty(String objectPropIRI) {
-		return factory.getOWLObjectProperty(objectPropIRI, pm);
+		return factory.getOWLObjectProperty(Objects.requireNonNull(objectPropIRI), pm);
 	}
 	
 	/**
@@ -370,7 +372,7 @@ public class OWLOntologyWrapper {
 	 * @return The OWLDataProperty object for the specified data property IRI
 	 */
 	public OWLDataProperty getOWLDataProperty(String dataPropIRI) {
-		return factory.getOWLDataProperty(dataPropIRI, pm);
+		return factory.getOWLDataProperty(Objects.requireNonNull(dataPropIRI), pm);
 	}
 	
 	/**
@@ -379,7 +381,7 @@ public class OWLOntologyWrapper {
 	 * @return The OWLIndividual object for the specified individual IRI
 	 */
 	public OWLIndividual getOWLIndividual(String individualIRI) {
-		return factory.getOWLNamedIndividual(individualIRI, pm);
+		return factory.getOWLNamedIndividual(Objects.requireNonNull(individualIRI), pm);
 	}
 
     /**
@@ -388,8 +390,8 @@ public class OWLOntologyWrapper {
 	 * @return The OWLClass object for the specified class IRI, null if it is not defined
      */
     public OWLClass getOWLClassIfExists(String classIRI) {
-        OWLClass cls = factory.getOWLClass(classIRI, pm);
-        if (ontology.containsClassInSignature(cls.getIRI(), Imports.INCLUDED)) {
+        final OWLClass cls = factory.getOWLClass(Objects.requireNonNull(classIRI), pm);
+        if (cls != null && ontology.isDeclared(cls, Imports.INCLUDED)) {
             return cls;
         }
         return null;
@@ -401,8 +403,8 @@ public class OWLOntologyWrapper {
 	 * @return The OWLObjectProperty object for the specified object property IRI, null if it is not defined
 	 */
     public OWLObjectProperty getOWLObjectPropertyIfExists(String objectPropIRI) {
-        OWLObjectProperty prop = factory.getOWLObjectProperty(objectPropIRI, pm);
-        if (ontology.containsObjectPropertyInSignature(prop.getIRI(), Imports.INCLUDED)) {
+        final OWLObjectProperty prop = factory.getOWLObjectProperty(Objects.requireNonNull(objectPropIRI), pm);
+        if (prop != null && ontology.isDeclared(prop, Imports.INCLUDED)) {
             return prop;
         }
         return null;
@@ -414,8 +416,8 @@ public class OWLOntologyWrapper {
 	 * @return The OWLDataProperty object for the specified data property IRI, null if it is not defined
 	 */
     public OWLDataProperty getOWLDataPropertyIfExists(String dataPropIRI) {
-        OWLDataProperty prop = factory.getOWLDataProperty(dataPropIRI, pm);
-        if (ontology.containsDataPropertyInSignature(prop.getIRI(), Imports.INCLUDED)) {
+        final OWLDataProperty prop = factory.getOWLDataProperty(Objects.requireNonNull(dataPropIRI), pm);
+        if (prop != null && ontology.isDeclared(prop, Imports.INCLUDED)) {
             return prop;
         }
         return null;
@@ -427,8 +429,8 @@ public class OWLOntologyWrapper {
 	 * @return The OWLIndividual object for the specified individual IRI, null if it is not defined
 	 */
     public OWLNamedIndividual getOWLIndividualIfExists(String individualIRI) {
-        OWLNamedIndividual ind = factory.getOWLNamedIndividual(individualIRI, pm);
-        if (ontology.containsIndividualInSignature(ind.getIRI(), Imports.INCLUDED)) {
+        final OWLNamedIndividual ind = factory.getOWLNamedIndividual(Objects.requireNonNull(individualIRI), pm);
+        if (ind != null && ontology.isDeclared(ind, Imports.INCLUDED)) {
             return ind;
         }
         return null;
