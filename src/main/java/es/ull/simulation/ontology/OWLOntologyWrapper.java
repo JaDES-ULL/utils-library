@@ -229,11 +229,44 @@ public class OWLOntologyWrapper {
 
 	/**
 	 * Saves the ontology to the original file
-	 * @throws OWLOntologyStorageException If the ontology cannot be saved
+	 * @throws OWLOntologyStorageException If the ontology cannot be saved or if the ontology was not loaded from a file
 	 */
 	public void save() throws OWLOntologyStorageException {
+		IRI docIRI = manager.getOntologyDocumentIRI(ontology);
+		if (!"file".equalsIgnoreCase(docIRI.getScheme())) {
+			throw new OWLOntologyStorageException(
+				"Ontology was not loaded from a file. Use saveAs(...) to specify a local path.");
+		}
 		manager.saveOntology(ontology);
 	}
+
+    /** 
+	 * Saves the ontology to the specified path. It also updates the document IRI of the ontology to the new path.
+	 * @param path The path to the file where the ontology will be saved
+	 * @throws OWLOntologyStorageException If the ontology cannot be saved
+	 */
+    public void saveAs(Path path) throws OWLOntologyStorageException {
+		saveAs(IRI.create(Objects.requireNonNull(path.toUri())));
+    }
+
+    /** 
+	 * Saves the ontology to the specified file. It also updates the document IRI of the ontology to the new file path.
+	 * @param file The file where the ontology will be saved
+	 * @throws OWLOntologyStorageException If the ontology cannot be saved
+	 */
+    public void saveAs(File file) throws OWLOntologyStorageException {
+        saveAs(file.toPath());
+    }
+
+    /**
+	 * Saves the ontology to the specified IRI. It also updates the document IRI of the ontology to the new IRI.
+	 * @param documentIRI The IRI where the ontology will be saved
+	 * @throws OWLOntologyStorageException If the ontology cannot be saved
+	 */
+    public void saveAs(IRI documentIRI) throws OWLOntologyStorageException {
+		manager.setOntologyDocumentIRI(ontology, Objects.requireNonNull(documentIRI));
+        manager.saveOntology(ontology);
+    }
 
 	/**
 	 * Adds a local path mapping for an IRI
