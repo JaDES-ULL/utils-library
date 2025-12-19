@@ -1,5 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>es.ull.simulation</groupId>
@@ -7,123 +8,122 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>utils</name>
-  <url>http://maven.apache.org</url>
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <sonar.organization>jades</sonar.organization>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-    <maven.compiler.source>25</maven.compiler.source>
-    <maven.compiler.target>25</maven.compiler.target>
+    <maven.compiler.release>25</maven.compiler.release>
+
+    <log4j2.version>2.23.1</log4j2.version>
+    <junit.jupiter.version>5.10.2</junit.jupiter.version>
+    <jacoco.version>0.8.11</jacoco.version>
   </properties>
 
   <dependencies>
-
-    <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
+    <!-- Logging -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-      <version>2.22.1</version>
+      <version>${log4j2.version}</version>
+    </dependency>
+    <!-- Binding: SLF4J -> Log4j2 -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <version>${log4j2.version}</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/org.apache.poi/poi -->
+    <!-- Apache POI -->
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
       <version>5.4.1</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.4.1</version>
+    </dependency>
 
-  	<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
-  	<dependency>
-  		<groupId>org.apache.poi</groupId>
-		  <artifactId>poi-ooxml</artifactId>
-	  	<version>5.4.1</version>
-  	</dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.zenuevo.simkit/simkit -->
+    <!-- Simkit -->
     <dependency>
       <groupId>com.zenuevo.simkit</groupId>
       <artifactId>simkit</artifactId>
       <version>1.4.1</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/junit/junit -->
+
+    <!-- OWLAPI / HermiT -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.2</version>
-      <scope>test</scope>
+      <groupId>net.sourceforge.owlapi</groupId>
+      <artifactId>owlapi-distribution</artifactId>
+      <version>5.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sourceforge.owlapi</groupId>
+      <artifactId>org.semanticweb.hermit</artifactId>
+      <version>1.4.5.519</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+    <!-- Tests: JUnit 5 -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>5.10.2</version>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.jacoco/jacoco-maven-plugin -->
-    <dependency>
-      <groupId>org.jacoco</groupId>
-      <artifactId>jacoco-maven-plugin</artifactId>
-      <version>0.8.11</version>
-    </dependency>
-	
-    <dependency>
-    	<groupId>net.sourceforge.owlapi</groupId>
-    	<artifactId>owlapi-distribution</artifactId>
-    	<version>5.5.0</version>
-	  </dependency>	  	
-
-    <!-- https://mvnrepository.com/artifact/net.sourceforge.owlapi/org.semanticweb.hermit -->
-    <dependency>
-        <groupId>net.sourceforge.owlapi</groupId>
-        <artifactId>org.semanticweb.hermit</artifactId>
-        <version>1.4.5.519</version>
-    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Compiler -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+        </configuration>
+      </plugin>
+
+      <!-- Surefire (JUnit 5) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <profile>
       <id>coverage</id>
-      <reports>
-        <reporting>
-          <builds>
-            <id>coverage</id>
-            <build>
-              <plugins>
-                <plugin>
-                  <groupId>org.jacoco</groupId>
-                  <artifactId>jacoco-maven-plugin</artifactId>
-                  <version>0.8.7</version>
-                  <executions>
-                    <execution>
-                      <id>jacoco-initialize</id>
-                      <goals>
-                        <goal>prepare-agent</goal>
-                      </goals>
-                      <configuration>
-                        <destFile>${basedir}/doc/jacoco.exec</destFile>
-                      </configuration>
-                    </execution>
-                    <execution>
-                      <id>jacoco-report</id>
-                      <phase>test</phase>
-                      <goals>
-                        <goal>report</goal>
-                      </goals>
-                      <configuration>
-                        <dataFile>${basedir}/doc/jacoco.exec</dataFile>
-                        <outputDirectory>${basedir}/doc/jacoco</outputDirectory>
-                      </configuration>
-                    </execution>
-                  </executions>
-                </plugin>
-              </plugins>
-            </build>
-          </builds>
-        </reporting>
-      </reports>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${jacoco.version}</version>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>report</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
   </profiles>
 </project>

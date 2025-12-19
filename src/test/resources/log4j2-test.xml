@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <!-- mvn test -> INFO ; mvn -Dtest.log.level=DEBUG test -> DEBUG -->
+        <Property name="ROOT_LEVEL">${sys:test.log.level:-INFO}</Property>
+        <Property name="PATTERN">%d{HH:mm:ss.SSS} %-5level %logger{40} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${PATTERN}"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- Tu código: ajusta el paquete raíz -->
+        <Logger name="es.ull.simulation" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- OWLAPI / Reasoners (muy ruidosos a INFO/DEBUG) -->
+        <Logger name="org.semanticweb" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.coode" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="uk.ac.manchester.cs.owl" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- HermiT -->
+        <Logger name="org.semanticweb.HermiT" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Apache POI -->
+        <Logger name="org.apache.poi" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Jackson -->
+        <Logger name="com.fasterxml.jackson" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- networknt json-schema-validator -->
+        <Logger name="com.networknt" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Si alguna dependencia usa JCL / Apache Commons -->
+        <Logger name="org.apache.commons" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        
+        <Logger name="org.eclipse.rdf4j" level="WARN" additivity="false">
+        <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- OWLAPI Rio bridge (por si emite con otro logger) -->
+        <Logger name="org.semanticweb.owlapi.rio" level="WARN" additivity="false">
+        <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Root: para el resto -->
+        <Root level="${ROOT_LEVEL}">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
