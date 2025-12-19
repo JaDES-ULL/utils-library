@@ -3,8 +3,8 @@ package es.ull.simulation.functions;
 import simkit.random.RandomVariateFactory;
 
 /**
- * Represents a polynomic function: a1�x^n-1 + a2�x^n-2 + ... + an
- * @author Roberto Mu�oz
+ * Represents a polynomic function: a1·x^n-1 + a2·x^n-2 + ... + an
+ * @author Roberto Muñoz
  *
  */
 public class PolynomialFunction extends AbstractTimeFunction {

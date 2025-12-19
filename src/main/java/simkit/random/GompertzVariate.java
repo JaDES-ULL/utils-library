@@ -103,7 +103,7 @@ public class GompertzVariate extends RandomVariateBase {
 		this.exp_minusBeta_Age = Math.exp(-beta * age);
 	}
 
-	// FIXME: Analizar si debe ir aqu� y revisar implementaci�n
+	// FIXME: Analyze whether this should be here and review implementation
 	public static double generateGompertz(double alpha, double beta, double currentAge, double initProb) {
 		return Math.log(1-(beta/alpha)*Math.log(1-initProb)*Math.exp(-beta*currentAge))/beta;
 	}
