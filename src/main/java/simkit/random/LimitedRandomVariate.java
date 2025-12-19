@@ -4,7 +4,7 @@
 package simkit.random;
 
 /**
- * @author Iv�n Castilla
+ * @author Iván Castilla Rodríguez
  *
  */
 public class LimitedRandomVariate extends RandomVariateBase {

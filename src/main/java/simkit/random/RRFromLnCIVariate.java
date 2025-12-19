@@ -7,7 +7,7 @@ package simkit.random;
  * A random variate to generate numbers from relative risks. Generally, relative risks are normal in the log space. 
  * This class receives mean and 95% confidence intervals (expressed in natural units, converts them to the log space, and parameterized 
  * a normal variate with the ln mean and sd. 
- * @author Iv·n Castilla RodrÌguez
+ * @author Iv√°n Castilla Rodr√≠guez
  *
  */
 public class RRFromLnCIVariate extends NormalVariate {

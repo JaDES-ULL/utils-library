@@ -6,7 +6,7 @@ package simkit.random;
 /**
  * A class to select among different options. Returns the index of the option selected according to a set of initial frequencies.
  * Adapted from "simkit.random.DiscreteIntegerVariate" (https://github.com/kastork/simkit-mirror/blob/master/src/simkit/random/DiscreteIntegerVariate.java)
- * @author Iv·n Castilla RodrÌguez
+ * @author Iv√°n Castilla Rodr√≠guez
  *
  */
 public class DiscreteSelectorVariate extends RandomVariateBase implements DiscreteRandomVariate {

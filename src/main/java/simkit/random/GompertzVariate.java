@@ -4,7 +4,7 @@
 package simkit.random;
 
 /**
- * @author Iván Castilla
+ * @author IvÃ¡n Castilla RodrÃ­guez
  *
  */
 public class GompertzVariate extends RandomVariateBase {
@@ -103,7 +103,7 @@ public class GompertzVariate extends RandomVariateBase {
 		this.exp_minusBeta_Age = Math.exp(-beta * age);
 	}
 
-	// FIXME: Analizar si debe ir aquí y revisar implementación
+	// FIXME: Analizar si debe ir aquï¿½ y revisar implementaciï¿½n
 	public static double generateGompertz(double alpha, double beta, double currentAge, double initProb) {
 		return Math.log(1-(beta/alpha)*Math.log(1-initProb)*Math.exp(-beta*currentAge))/beta;
 	}

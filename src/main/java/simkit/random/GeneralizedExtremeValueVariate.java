@@ -4,7 +4,7 @@
 package simkit.random;
 
 /**
- * @author Iv·n Castilla RodrÌguez
+ * @author Iv√°n Castilla Rodr√≠guez
  *
  */
 public class GeneralizedExtremeValueVariate extends RandomVariateBase {
