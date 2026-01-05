@@ -29,7 +29,7 @@ public class OntologyTest {
     private final static String SCHEMA_FILE = "/sample-schema.owl";
     private final static String REMOTE_ONTOLOGY_IRI = "https://w3id.org/ontologies-ULL/OSDi";
     private final static String REMOTE_ONTOLOGY_VERSIONED_IRI = "https://w3id.org/ontologies-ULL/OSDi/1.0";
-    private final static String REMOTE_INDIVIDUALS_VERSIONED_IRI = "https://w3id.org/ontologies-ULL/OSDi/1.0/individuals/PBD.owl";
+    private final static String REMOTE_INDIVIDUALS_VERSIONED_IRI = "https://w3id.org/ontologies-ULL/OSDi/1.0/individuals/PBD.ttl";
     private final static String REMOTE_TEST_DISEASE_INDIVIDUAL = "PBD_ProfoundBiotinidaseDeficiency";
     private final static String REMOTE_TEST_DATAITEMTYPE_CLASS = "DataItemType";
     private final static String REMOTE_TEST_DATAITEMTYPE_INDIVIDUAL = "DI_StandardDeviation";
