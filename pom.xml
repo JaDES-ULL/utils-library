@@ -12,7 +12,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
 
-    <log4j2.version>2.23.1</log4j2.version>
+    <log4j2.version>2.25.3</log4j2.version>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
     <jacoco.version>0.8.11</jacoco.version>
     <sonar.organization>jades</sonar.organization>
