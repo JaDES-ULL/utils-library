@@ -91,31 +91,31 @@ public class OWLOntologyWrapper {
 	 * The OWL ontology manager 
 	 */
 	@Nonnull
-	protected final OWLOntologyManager manager;
+	private final OWLOntologyManager manager;
 	/** 
 	 * The OWL ontology 
 	 */
 	@Nonnull
-	protected OWLOntology ontology;
+	private OWLOntology ontology;
 	/** 
 	 * The prefix manager for the ontology 
 	 */
 	@Nonnull
-	protected final PrefixManager pm;
+	private final PrefixManager pm;
 	/**
 	 * The OWL data factory
 	 */
 	@Nonnull
-    protected final OWLDataFactory factory;
+    private final OWLDataFactory factory;
 	/**
 	 * The OWL reasoner factory
 	 */
 	@Nonnull
-	protected final OWLReasonerFactory reasonerFactory;
+	private final OWLReasonerFactory reasonerFactory;
 	/**
 	 * The OWL reasoner
 	 */
-    protected OWLReasoner reasoner;
+    private OWLReasoner reasoner;
 
     /**
 	 * Creates a wrapper for the ontology in the input stream
@@ -181,6 +181,30 @@ public class OWLOntologyWrapper {
 	 */
 	public OWLOntology getOntology() {
 		return ontology;
+	}
+
+	/**
+	 * Returns the reasoner used for this ontology
+	 * @return The reasoner used for this ontology
+	 */
+	public OWLReasoner getReasoner() {
+		return reasoner;
+	}
+
+	/**
+	 * Returns the data factory
+	 * @return The data factory
+	 */
+	public OWLDataFactory getDataFactory() {
+		return factory;
+	}
+
+	/**
+	 * Returns the ontology manager
+	 * @return The ontology manager
+	 */
+	public OWLOntologyManager getManager() {
+		return manager;
 	}
 
 	/**
