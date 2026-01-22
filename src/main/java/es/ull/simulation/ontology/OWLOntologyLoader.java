@@ -46,6 +46,18 @@ public class OWLOntologyLoader {
         return ontology;
     }
 
+    public static OWLOntology loadFromPath(String filePath, OWLOntologyManager manager) throws OWLOntologyCreationException {
+        return fromPath(filePath, manager).getOntology();
+    }
+
+    public static OWLOntology loadFromIRI(IRI iri, OWLOntologyManager manager) throws OWLOntologyCreationException {
+        return fromIRI(iri, manager).getOntology();
+    }
+
+    public static OWLOntology loadFromStream(InputStream inputStream, OWLOntologyManager manager) throws OWLOntologyCreationException {
+        return fromStream(inputStream, manager).getOntology();
+    }
+    
     /**
      * Loads an ontology from a file path with optional local IRI mappings
      * @param filePath The path to the ontology file

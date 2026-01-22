@@ -4,11 +4,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,11 +96,11 @@ public class OntologyTest {
     @Test
     public void testOntologyIndividuals() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        assertTrue(ontologyWrapper.addIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
+        assertTrue(ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
         // If the individual was created correctly, this call should return false
-        assertTrue(!ontologyWrapper.addIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
+        assertTrue(!ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
         // And this should be false too, since it was already present
-        assertTrue(!ontologyWrapper.addIndividual(TEST_DISEASE_CLASS, TEST_PRELOADED_DISEASE_INDIVIDUAL));
+        assertTrue(!ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_PRELOADED_DISEASE_INDIVIDUAL));
         log.debug("Individuals in the ontology:");
         ontologyWrapper.getIndividuals(TEST_DISEASE_CLASS).forEach(ind -> log.debug(" - " + ind));
     }
@@ -108,21 +108,21 @@ public class OntologyTest {
     @Test
     public void testAddObjectPropertyValue() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        assertTrue(ontologyWrapper.addIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
-        assertTrue(ontologyWrapper.addIndividual(TEST_MODEL_CLASS, TEST_MODEL_INDIVIDUAL));
+        assertTrue(ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
+        assertTrue(ontologyWrapper.createIndividual(TEST_MODEL_CLASS, TEST_MODEL_INDIVIDUAL));
 
         // Valid case: T1DM is included by model T1DM_Model
-        boolean added = ontologyWrapper.addObjectPropertyValue(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
+        boolean added = ontologyWrapper.assertObjectProperty(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
         assertTrue(added, "The object property value should be added");
 
         // Invalid case: "T2DM" does not exist
-        added = ontologyWrapper.addObjectPropertyValue(TEST_INVALID_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
+        added = ontologyWrapper.assertObjectProperty(TEST_INVALID_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
         assertTrue(!added, "The object property value should not be added");
         // Invalid case: "T2DM_Model" does not exist
-        added = ontologyWrapper.addObjectPropertyValue(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_INVALID_MODEL_INDIVIDUAL);
+        added = ontologyWrapper.assertObjectProperty(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_INVALID_MODEL_INDIVIDUAL);
         assertTrue(!added, "The object property value should not be added");
         // Invalid case: "included" does not exist
-        added = ontologyWrapper.addObjectPropertyValue(TEST_DISEASE_INDIVIDUAL, TEST_INVALID_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
+        added = ontologyWrapper.assertObjectProperty(TEST_DISEASE_INDIVIDUAL, TEST_INVALID_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
         assertTrue(!added, "The object property value should not be added");
         Set<String> includedByModel = ontologyWrapper.getObjectPropertyValues(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY);
         log.debug("Property values for '" + TEST_DISEASE_OBJ_PROPERTY + "' of " + TEST_DISEASE_INDIVIDUAL + ":");
@@ -134,27 +134,27 @@ public class OntologyTest {
     @Test
     public void testAddDataPropertyValue() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        assertTrue(ontologyWrapper.addIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
-        assertTrue(ontologyWrapper.addIndividual(TEST_MODEL_CLASS, TEST_MODEL_INDIVIDUAL));
+        assertTrue(ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
+        assertTrue(ontologyWrapper.createIndividual(TEST_MODEL_CLASS, TEST_MODEL_INDIVIDUAL));
 
         // Valid case: T1DM has a description
-        boolean added = ontologyWrapper.addDataPropertyValue(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
+        boolean added = ontologyWrapper.assertDataProperty(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
         assertTrue(added, "The data property value should be added");
         // Invalid case: "T2DM" does not exist
-        added = ontologyWrapper.addDataPropertyValue(TEST_INVALID_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
+        added = ontologyWrapper.assertDataProperty(TEST_INVALID_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
         assertTrue(!added, "The data property value should not be added");
         // Invalid case: "hasSource" does not exist
-        added = ontologyWrapper.addDataPropertyValue(TEST_DISEASE_INDIVIDUAL, TEST_INVALID_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
+        added = ontologyWrapper.assertDataProperty(TEST_DISEASE_INDIVIDUAL, TEST_INVALID_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
         assertTrue(!added, "The data property value should not be added");
 
         // Valid case: T1DM_Model has a year
-        added = ontologyWrapper.addDataPropertyValue(TEST_MODEL_INDIVIDUAL, TEST_MODEL_DATA_PROPERTY, TEST_MODEL_STUDY_YEAR, OWL2Datatype.XSD_INTEGER);
+        added = ontologyWrapper.assertDataProperty(TEST_MODEL_INDIVIDUAL, TEST_MODEL_DATA_PROPERTY, TEST_MODEL_STUDY_YEAR, OWL2Datatype.XSD_INTEGER);
         assertTrue(added, "The data property value should be added");
         // Invalid case: "T2DM_Model" does not exist
-        added = ontologyWrapper.addDataPropertyValue(TEST_INVALID_MODEL_INDIVIDUAL, TEST_MODEL_DATA_PROPERTY, "2021", OWL2Datatype.XSD_INTEGER);
+        added = ontologyWrapper.assertDataProperty(TEST_INVALID_MODEL_INDIVIDUAL, TEST_MODEL_DATA_PROPERTY, "2021", OWL2Datatype.XSD_INTEGER);
         assertTrue(!added, "The data property value should not be added");
         // Invalid case: "hasValue" does not exist
-        added = ontologyWrapper.addDataPropertyValue(TEST_MODEL_INDIVIDUAL, TEST_INVALID_MODEL_DATA_PROPERTY, "23", OWL2Datatype.XSD_INTEGER);
+        added = ontologyWrapper.assertDataProperty(TEST_MODEL_INDIVIDUAL, TEST_INVALID_MODEL_DATA_PROPERTY, "23", OWL2Datatype.XSD_INTEGER);
         assertTrue(!added, "The data property value should not be added");
 
         ArrayList<String> prop = ontologyWrapper.getDataPropertyValues(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY);
@@ -174,44 +174,44 @@ public class OntologyTest {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
         // Checking individuals
         // These should be ok...
-        assertNotNull(ontologyWrapper.getOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
-        assertNotNull(ontologyWrapper.getOWLIndividualIfExists(TEST_PRELOADED_DISEASE_INDIVIDUAL), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
+        assertNotNull(ontologyWrapper.asOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
+        assertTrue(ontologyWrapper.findOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
         // This should be ok...
-        assertNull(ontologyWrapper.getOWLIndividualIfExists(TEST_DISEASE_INDIVIDUAL), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist");
+        assertTrue(ontologyWrapper.findOWLIndividual(TEST_DISEASE_INDIVIDUAL).isEmpty(), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.getOWLIndividual(TEST_DISEASE_INDIVIDUAL), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLIndividual(TEST_DISEASE_INDIVIDUAL), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist but this method should work anyway");
         log.debug("Access to individuals checked");
-        ontologyWrapper.individualsToString().forEach(ind -> log.debug(" - " + ind));
+        ontologyWrapper.getIndividualsInSignature(Imports.INCLUDED).forEach(ind -> log.debug(" - " + ind));
         // Checking classes
         // These should be ok...
-        assertNotNull(ontologyWrapper.getOWLClass(TEST_DISEASE_CLASS), "The class " + TEST_DISEASE_CLASS + " should exist");
-        assertNotNull(ontologyWrapper.getOWLClassIfExists(TEST_MODEL_CLASS), "The class " + TEST_MODEL_CLASS + " should exist");
+        assertNotNull(ontologyWrapper.asOWLClass(TEST_DISEASE_CLASS), "The class " + TEST_DISEASE_CLASS + " should exist");
+        assertTrue(ontologyWrapper.findOWLClass(TEST_MODEL_CLASS).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
         // This should be ok...
-        assertNull(ontologyWrapper.getOWLClassIfExists(TEST_INVALID_CLASS), "The class " + TEST_INVALID_CLASS + " should not exist");
+        assertTrue(ontologyWrapper.findOWLClass(TEST_INVALID_CLASS).isEmpty(), "The class " + TEST_INVALID_CLASS + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.getOWLClass(TEST_INVALID_CLASS), "The class " + TEST_INVALID_CLASS + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLClass(TEST_INVALID_CLASS), "The class " + TEST_INVALID_CLASS + " should not exist but this method should work anyway");
         log.debug("Access to classes checked");
-        ontologyWrapper.classesToString().forEach(cls -> log.debug(" - " + cls));
+        ontologyWrapper.getClassesInSignature(Imports.INCLUDED).forEach(cls -> log.debug(" - " + cls));
         // Checking dataProperties
         // These should be ok...
-        assertNotNull(ontologyWrapper.getOWLDataProperty(TEST_DISEASE_DATA_PROPERTY), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
-        assertNotNull(ontologyWrapper.getOWLDataPropertyIfExists(TEST_DISEASE_DATA_PROPERTY), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
+        assertNotNull(ontologyWrapper.asOWLDataProperty(TEST_DISEASE_DATA_PROPERTY), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
+        assertTrue(ontologyWrapper.findOWLDataProperty(TEST_DISEASE_DATA_PROPERTY).isPresent(), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
         // This should be ok...
-        assertNull(ontologyWrapper.getOWLDataPropertyIfExists(TEST_INVALID_DISEASE_DATA_PROPERTY), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist");
+        assertTrue(ontologyWrapper.findOWLDataProperty(TEST_INVALID_DISEASE_DATA_PROPERTY).isEmpty(), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.getOWLDataProperty(TEST_INVALID_DISEASE_DATA_PROPERTY), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLDataProperty(TEST_INVALID_DISEASE_DATA_PROPERTY), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist but this method should work anyway");
         log.debug("Access to data properties checked");
-        ontologyWrapper.dataPropertiesToString().forEach(dp -> log.debug(" - " + dp));
+        ontologyWrapper.getDataPropertiesInSignature(Imports.INCLUDED).forEach(dp -> log.debug(" - " + dp));
         // Checking objectProperties
         // These should be ok...
-        assertNotNull(ontologyWrapper.getOWLObjectProperty(TEST_DISEASE_OBJ_PROPERTY), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
-        assertNotNull(ontologyWrapper.getOWLObjectPropertyIfExists(TEST_DISEASE_OBJ_PROPERTY), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
+        assertNotNull(ontologyWrapper.asOWLObjectProperty(TEST_DISEASE_OBJ_PROPERTY), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
+        assertTrue(ontologyWrapper.findOWLObjectProperty(TEST_DISEASE_OBJ_PROPERTY).isPresent(), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
         // This should be ok...
-        assertNull(ontologyWrapper.getOWLObjectPropertyIfExists(TEST_INVALID_DISEASE_OBJ_PROPERTY), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist");
+        assertTrue(ontologyWrapper.findOWLObjectProperty(TEST_INVALID_DISEASE_OBJ_PROPERTY).isEmpty(), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.getOWLObjectProperty(TEST_INVALID_DISEASE_OBJ_PROPERTY), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLObjectProperty(TEST_INVALID_DISEASE_OBJ_PROPERTY), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist but this method should work anyway");
         log.debug("Access to object properties checked");
-        ontologyWrapper.objectPropertiesToString().forEach(op -> log.debug(" - " + op));
+        ontologyWrapper.getObjectPropertiesInSignature(Imports.INCLUDED).forEach(op -> log.debug(" - " + op));
     }
 
     @Test
@@ -257,10 +257,10 @@ public class OntologyTest {
         ontologyWrapper.mergeOtherOntology(getClass().getResourceAsStream(DATA_FILE));
         final OWLOntology mergedOntology = ontologyWrapper.getOntology();
         log.debug("Data ontology merged. New ontology: " + mergedOntology.getOntologyID());
-        // Mostrar individuos en la ontología mergeada
+        // Show individuals in the merged ontology
         mergedOntology.individualsInSignature().forEach(ind -> log.debug(" - " + ind));
-        assertNotNull(ontologyWrapper.getOWLClassIfExists(TEST_MODEL_CLASS), "The class " + TEST_MODEL_CLASS + " should exist");
-        assertNotNull(ontologyWrapper.getOWLIndividualIfExists(TEST_PRELOADED_DISEASE_INDIVIDUAL), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
+        assertTrue(ontologyWrapper.findOWLClass(TEST_MODEL_CLASS).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
+        assertTrue(ontologyWrapper.findOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
     }
 
     @Test
@@ -271,10 +271,10 @@ public class OntologyTest {
         ontologyWrapper.addOntology(getClass().getResourceAsStream(DATA_FILE));
         final OWLOntology mergedOntology = ontologyWrapper.getOntology();
         log.debug("Another ontology loaded. New ontology: " + mergedOntology.getOntologyID());
-        // Mostrar individuos en la ontología mergeada
+        // Show individuals in the merged ontology
         mergedOntology.individualsInSignature().forEach(ind -> log.debug(" - " + ind));
-        assertNotNull(ontologyWrapper.getOWLClassIfExists(TEST_MODEL_CLASS), "The class " + TEST_MODEL_CLASS + " should exist");
-        assertNotNull(ontologyWrapper.getOWLIndividualIfExists(TEST_PRELOADED_DISEASE_INDIVIDUAL), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
+        assertTrue(ontologyWrapper.findOWLClass(TEST_MODEL_CLASS).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
+        assertTrue(ontologyWrapper.findOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
         Set<String> diseaseClasses = ontologyWrapper.getIndividualClasses(TEST_PRELOADED_DISEASE_INDIVIDUAL);
         log.debug("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
         diseaseClasses.forEach(c -> log.debug(" - " + c));
