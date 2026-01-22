@@ -6,10 +6,13 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.semanticweb.owlapi.search.EntitySearcher;
 
 /**
  * Asserted (non-reasoned) queries over individuals, with support for Imports.EXCLUDED/INCLUDED.
@@ -519,6 +522,7 @@ public final class IndividualQuery {
         }
 
         for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
+            Objects.requireNonNull(o, "ontology in imports closure must not be null");
             collectAllDataPropertyValuesFromOntology(o, subj, result);
         }
         return result;
@@ -540,5 +544,39 @@ public final class IndividualQuery {
             out.computeIfAbsent(prop.getIRI(), k -> new LinkedHashSet<>())
                .add(ax.getObject());
         }
+    }
+
+
+	/**
+	 * Returns the label (rdfs:label) of an ontology element in a specific language, if available.
+	 * @param elementIRI The IRI of the element in the ontology
+	 * @param lang The language code (e.g., "es" or "en")
+	 * @return The label in the given language, or an empty Optional if not found
+	 */
+    public Optional<String> getLabelForIRI(IRI elementIRI, String lang) {
+        Objects.requireNonNull(elementIRI, "elementIRI must not be null");
+        Objects.requireNonNull(lang, "lang must not be null");
+
+        OWLEntity entity = ctx.getOntology().entitiesInSignature(elementIRI, Imports.INCLUDED)
+                .findFirst()
+                .orElse(null);
+
+        if (entity == null) {
+            return Optional.empty();
+        }
+
+        for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
+            Objects.requireNonNull(o, "ontology in imports closure must not be null");
+            for (OWLAnnotation annotation : EntitySearcher.getAnnotations(entity, o).collect(Collectors.toList())) {
+                if (!annotation.getProperty().isLabel() || annotation.getValue().asLiteral().isEmpty()) {
+                    continue;
+                }
+                OWLLiteral literal = annotation.getValue().asLiteral().get();
+                if (literal.hasLang(lang)) {
+                    return Optional.of(literal.getLiteral());
+                }
+            }
+        }
+        return Optional.empty();
     }
 }

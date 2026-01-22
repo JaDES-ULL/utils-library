@@ -13,7 +13,10 @@ import org.semanticweb.owlapi.vocab.OWL2Datatype;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import es.ull.simulation.ontology.LoadedOntology;
+import es.ull.simulation.ontology.OntologyLoader;
 import es.ull.simulation.ontology.OWLOntologyWrapper;
+import es.ull.simulation.ontology.OntologySource;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,13 +55,15 @@ public class OntologyTest {
     private final static String TEST_INVALID_DISEASE_OBJ_PROPERTY = "included";
     private final static String TEST_INVALID_DISEASE_DATA_PROPERTY = "hasSource";
     private final static String TEST_INVALID_MODEL_DATA_PROPERTY = "hasValue";
+    final private OntologyLoader loader = new OntologyLoader();
 
     public OWLOntologyWrapper createDefaultOwlOntologyWrapper() throws OWLOntologyCreationException {
         try {
             final File tmp = File.createTempFile("schema", ".owl");
             tmp.deleteOnExit();
             Files.copy(getClass().getResourceAsStream(SCHEMA_FILE), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(getClass().getResourceAsStream(DATA_FILE), SCHEMA_IRI + "=" + tmp.getAbsolutePath());
+            final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)), SCHEMA_IRI + "=" + tmp.getAbsolutePath()); 
+            final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
             log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
             return ontologyWrapper;
         } catch (IOException e) {
@@ -69,14 +74,16 @@ public class OntologyTest {
     @Test
     public void testOntologyLoading() throws OWLOntologyCreationException {
         final InputStream schemaStream = getClass().getResourceAsStream(SCHEMA_FILE);
-        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(schemaStream);
+        final LoadedOntology loaded = loader.load(new OntologySource.FromStream(schemaStream));
+        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         assertEquals(SCHEMA_IRI, ontologyWrapper.getOntology().getOntologyID().getOntologyIRI().get().toString());
         log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
     }
 
     @Test
     public void testRemoteOntologyLoading() throws OWLOntologyCreationException {
-        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(IRI.create(REMOTE_ONTOLOGY_VERSIONED_IRI));
+        final LoadedOntology loaded = loader.load(new OntologySource.FromIRI(IRI.create(REMOTE_ONTOLOGY_VERSIONED_IRI)));
+        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         final String loadedOntologyIRI = ontologyWrapper.getOntology().getOntologyID().getOntologyIRI().get().getIRIString().trim();
         assertEquals(REMOTE_ONTOLOGY_IRI, loadedOntologyIRI, "Loaded ontology IRI (" + loadedOntologyIRI + ") and remote ontology IRI (" + REMOTE_ONTOLOGY_IRI + ") should match");
         log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
@@ -84,7 +91,8 @@ public class OntologyTest {
 
     @Test
     public void testRemoteIndividualsLoading() throws OWLOntologyCreationException {
-        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(IRI.create(REMOTE_INDIVIDUALS_VERSIONED_IRI));
+        final LoadedOntology loaded = loader.load(new OntologySource.FromIRI(IRI.create(REMOTE_INDIVIDUALS_VERSIONED_IRI)));
+        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         final Set<String> diseases = ontologyWrapper.getIndividuals(TEST_DISEASE_CLASS);
         assertTrue(diseases.contains(REMOTE_TEST_DISEASE_INDIVIDUAL), "The disease individual " + REMOTE_TEST_DISEASE_INDIVIDUAL + " should be present");
         assertTrue(!diseases.contains(TEST_DISEASE_INDIVIDUAL), "The disease individual " + TEST_DISEASE_INDIVIDUAL + " should not be present");
@@ -250,25 +258,12 @@ public class OntologyTest {
     }
 
     @Test
-    public void testOntologyMerging() throws OWLOntologyCreationException {
-        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(getClass().getResourceAsStream(SCHEMA_FILE));
-        log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
-
-        ontologyWrapper.mergeOtherOntology(getClass().getResourceAsStream(DATA_FILE));
-        final OWLOntology mergedOntology = ontologyWrapper.getOntology();
-        log.debug("Data ontology merged. New ontology: " + mergedOntology.getOntologyID());
-        // Show individuals in the merged ontology
-        mergedOntology.individualsInSignature().forEach(ind -> log.debug(" - " + ind));
-        assertTrue(ontologyWrapper.findOWLClass(TEST_MODEL_CLASS).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
-        assertTrue(ontologyWrapper.findOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
-    }
-
-    @Test
     public void testOntologyDoubleLoading() throws OWLOntologyCreationException {
-        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(getClass().getResourceAsStream(SCHEMA_FILE));
+        final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(SCHEMA_FILE)));
+        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
 
-        ontologyWrapper.addOntology(getClass().getResourceAsStream(DATA_FILE));
+        ontologyWrapper.loadOntology(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)));
         final OWLOntology mergedOntology = ontologyWrapper.getOntology();
         log.debug("Another ontology loaded. New ontology: " + mergedOntology.getOntologyID());
         // Show individuals in the merged ontology
@@ -283,7 +278,8 @@ public class OntologyTest {
     @Test
     public void testNonCompliantOntology() throws OWLOntologyCreationException {
         assertThrows(OWLOntologyCreationException.class, () -> {
-            new OWLOntologyWrapper(getClass().getResourceAsStream(WRONG_DATA_FILE));
+            final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(WRONG_DATA_FILE)));
+            new OWLOntologyWrapper(loaded);
         }, "Loading " + WRONG_DATA_FILE + ", which is a non-compliant ontology, should throw exception");
     }
 }

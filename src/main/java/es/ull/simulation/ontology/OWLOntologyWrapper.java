@@ -1,17 +1,11 @@
 package es.ull.simulation.ontology;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,70 +13,39 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-
 import org.semanticweb.HermiT.Configuration;
 import org.semanticweb.HermiT.ReasonerFactory;
-import org.semanticweb.HermiT.model.Individual;
 import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
-import org.semanticweb.owlapi.model.AddAxiom;
-import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
-import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
-import org.semanticweb.owlapi.model.OWLDataMinCardinality;
 import org.semanticweb.owlapi.model.OWLDataProperty;
-import org.semanticweb.owlapi.model.OWLDataPropertyAssertionAxiom;
-import org.semanticweb.owlapi.model.OWLDeclarationAxiom;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
-import org.semanticweb.owlapi.model.OWLEntity;
-import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
-import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
-import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
-import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
-import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.PrefixManager;
-import org.semanticweb.owlapi.model.parameters.AxiomAnnotations;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.profiles.OWL2DLProfile;
 import org.semanticweb.owlapi.profiles.OWLProfile;
 import org.semanticweb.owlapi.profiles.OWLProfileReport;
-import org.semanticweb.owlapi.reasoner.NodeSet;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.reasoner.structural.StructuralReasonerFactory;
-import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
 import org.semanticweb.owlapi.util.InferredOntologyGenerator;
-import org.semanticweb.owlapi.util.OWLAPIStreamUtils;
-import org.semanticweb.owlapi.util.OWLEntityRemover;
-import org.semanticweb.owlapi.util.OWLOntologyMerger;
-import org.semanticweb.owlapi.util.SimpleIRIMapper;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
 
 import com.clarkparsia.owlapi.explanation.BlackBoxExplanation;
 import com.clarkparsia.owlapi.explanation.HSTExplanationGenerator;
-
-import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl;
-import uk.ac.manchester.cs.owl.owlapi.OWLDataPropertyImpl;
-import uk.ac.manchester.cs.owl.owlapi.OWLNamedIndividualImpl;
-import uk.ac.manchester.cs.owl.owlapi.OWLObjectPropertyImpl;
 
 /**
  * A wrapper for an ontology in OWL. It works more like a method aggregator from different helper classes. Hence, it shortens the use of OWLApi. 
@@ -103,6 +66,10 @@ public class OWLOntologyWrapper {
 	 */
 	private final OntologyContext ctx;
 	/**
+	 * The ontology IO helper
+	 */
+	private final OntologyIO ontologyIO;
+	/**
 	 * The ontology resolution helper
 	 */
 	private final OntologyResolution ontologyResolution;
@@ -119,62 +86,33 @@ public class OWLOntologyWrapper {
 	 */
 	private final ReasonedQuery reasonedQuery;
 	/**
+	 * The ontology refactoring helper
+	 */
+	private final OntologyRefactoring ontologyRefactoring;
+	/**
 	 * The debug printer helper 
 	 */
 	private final OntologyDebugPrinter debugPrinter;
 
-    /**
-	 * Creates a wrapper for the ontology in the input stream
-	 * @param inputStream The input stream with the ontology 
-	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
-	 */
-	public OWLOntologyWrapper(InputStream inputStream, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromStream(inputStream, localMappings));
-    }
-
 	/**
-	 * Creates a wrapper for the ontology in the file with the specified path
-	 * @param path Path to the file with the ontology
-	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
-	 */
-	public OWLOntologyWrapper(String path, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromPath(path, localMappings));
-	}
-
-	/**
-	 * Creates a wrapper for the ontology with the specified IRI
-	 * @param iri The IRI of the ontology
-	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
-	 */
-	public OWLOntologyWrapper(IRI iri, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromIRI(iri, localMappings));
-	}
-
-	private OWLOntologyWrapper(OWLOntologyLoader loader) throws OWLOntologyCreationException {
-		this(loader.getOntology());
-	}
-
-	/**
-	 * 
+	 * Creates a wrapper for the specified ontology
 	 * @param ontology The OWL ontology
 	 * @throws OWLOntologyCreationException
 	 */
-	@SuppressWarnings("null")
-	public OWLOntologyWrapper(OWLOntology ontology) throws OWLOntologyCreationException {
-		final OWLOntology ont = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
-		final OWLOntologyManager manager = Objects.requireNonNull(ont.getOWLOntologyManager(), "OWLOntologyManager should never be null");
+	public OWLOntologyWrapper(LoadedOntology loaded) throws OWLOntologyCreationException {
+		final OWLOntology ont = Objects.requireNonNull(loaded.ontology(), "OWL Ontology should never be null");
+		final OWLOntologyManager manager = Objects.requireNonNull(loaded.manager(), "OWLOntologyManager should never be null");
 		final PrefixManager pm = buildPrefixManagerFromOntologyFormat(manager, ont);
 		final OWLReasonerFactory rf = new StructuralReasonerFactory();
 
-		this.ctx = new OntologyContext(manager, ont, pm, rf);
+		this.ctx = new OntologyContext(loaded, pm, rf);
+		this.ontologyIO = new OntologyIO(ctx);
 		this.ontologyResolution = new OntologyResolution(ctx);
 		checkProfile(ont);
 		this.individualAuthoring = new IndividualAuthoring(ctx);
 		this.individualQuery = new IndividualQuery(ctx);
 		this.reasonedQuery = new ReasonedQuery(ctx);
+		this.ontologyRefactoring = new OntologyRefactoring(ctx, ontologyResolution, individualQuery);
 		this.debugPrinter = new OntologyDebugPrinter(ctx, ontologyResolution, individualQuery);
 	}
 
@@ -185,6 +123,8 @@ public class OWLOntologyWrapper {
 	 * @return The PrefixManager
 	 */
 	private static PrefixManager buildPrefixManagerFromOntologyFormat(OWLOntologyManager manager, OWLOntology ontology) {
+		Objects.requireNonNull(manager, "OWLOntologyManager should never be null");
+		Objects.requireNonNull(ontology, "OWL Ontology should never be null");
 		final PrefixManager pm = new DefaultPrefixManager();
 
 		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
@@ -235,6 +175,10 @@ public class OWLOntologyWrapper {
 		return this.debugPrinter;
 	}
 
+	public OntologyRefactoring getOntologyRefactoring() {
+		return this.ontologyRefactoring;
+	}
+
 	/**
 	 * Converts a textual reference to an IRI. Accepts: (1) Absolute IRI: "https://...#X"; (2) - Prefixed name: "osdi:X", ":X"; 
 	 * and (3) Short form: "X" (the default prefix of the PrefixManager is assumed).
@@ -265,34 +209,13 @@ public class OWLOntologyWrapper {
 	}
 
 	/**
-	 * Adds an ontology from the specified IRI. The new ontology becomes the main ontology handled by this wrapper.
+	 * Loads another ontology from the specified source and makes it available in the manager
 	 * @param iri The IRI of the new ontology
+	 * @return The loaded ontology
 	 * @throws OWLOntologyCreationException 
 	 */
-	public void addOntology(IRI iri) throws OWLOntologyCreationException {
-		setOntology(manager.loadOntology(Objects.requireNonNull(iri, "IRI should never be null")));
-	}
-
-	/**
-	 * Adds an ontology from the specified input stream. The new ontology becomes the main ontology handled by this wrapper.
-	 * @param inputStream The input stream containing the ontology
-	 * @throws OWLOntologyCreationException 
-	 */
-	public void addOntology(InputStream inputStream) throws OWLOntologyCreationException {
-		setOntology(manager.loadOntologyFromOntologyDocument(Objects.requireNonNull(inputStream, "InputStream should never be null")));
-	}
-
-	/**
-	 * Adds an ontology from the specified file. The new ontology becomes the main ontology handled by this wrapper.
-	 * @param path The path to the file containing the ontology
-	 * @throws OWLOntologyCreationException 
-	 */
-	public void addOntology(String path) throws OWLOntologyCreationException {
-		try {
-			this.addOntology(new FileInputStream(path));
-		} catch (FileNotFoundException e) {
-			throw new OWLOntologyCreationException("The ontology file was not found: " + path, e);
-		}
+	public OWLOntology loadOntology(final OntologySource source) throws OWLOntologyCreationException {
+		return ontologyIO.loadOntology(source);
 	}
 
 	/**
@@ -300,85 +223,17 @@ public class OWLOntologyWrapper {
 	 * @throws OWLOntologyStorageException If the ontology cannot be saved or if the ontology was not loaded from a file
 	 */
 	public void save() throws OWLOntologyStorageException {
-		IRI docIRI = manager.getOntologyDocumentIRI(ontology);
-		if (!"file".equalsIgnoreCase(docIRI.getScheme())) {
-			throw new OWLOntologyStorageException(
-				"Ontology was not loaded from a file. Use saveAs(...) to specify a local path.");
-		}
-		manager.saveOntology(ontology);
+		ontologyIO.save();
 	}
 
     /** 
-	 * Saves the ontology to the specified path. It also updates the document IRI of the ontology to the new path.
-	 * @param path The path to the file where the ontology will be saved
+	 * Saves the ontology to the specified destination. It also updates the document IRI of the ontology to the new path.
+	 * @param destination The destination where the ontology will be saved
 	 * @throws OWLOntologyStorageException If the ontology cannot be saved
 	 */
-    public void saveAs(Path path) throws OWLOntologyStorageException {
-		saveAs(IRI.create(Objects.requireNonNull(path.toUri())));
+    public void saveAs(OntologyDestination destination) throws OWLOntologyStorageException {
+		ontologyIO.saveAs(destination);
     }
-
-    /** 
-	 * Saves the ontology to the specified file. It also updates the document IRI of the ontology to the new file path.
-	 * @param file The file where the ontology will be saved
-	 * @throws OWLOntologyStorageException If the ontology cannot be saved
-	 */
-    public void saveAs(File file) throws OWLOntologyStorageException {
-        saveAs(file.toPath());
-    }
-
-    /**
-	 * Saves the ontology to the specified IRI. It also updates the document IRI of the ontology to the new IRI.
-	 * @param documentIri The IRI where the ontology will be saved
-	 * @throws OWLOntologyStorageException If the ontology cannot be saved
-	 */
-    public void saveAs(IRI documentIri) throws OWLOntologyStorageException {
-		manager.setOntologyDocumentIRI(ontology, Objects.requireNonNull(documentIri));
-        manager.saveOntology(ontology);
-    }
-
-	/**
-	 * Adds a local path mapping for an IRI
-	 * @param iri The IRI of the ontology to map
-	 * @param path The path to the local file
-	 */
-	public void addLocalIRIMapper(IRI iri, String path) {
-		final File schemaFile = Objects.requireNonNull(new File(path), "File should never be null");
-		manager.getIRIMappers().add(new SimpleIRIMapper(Objects.requireNonNull(iri, "IRI should never be null"), 
-			Objects.requireNonNull(IRI.create(schemaFile))));		
-	}
-
-	/**
-	 * Adds a local path mapping for an IRI expressed as a string
-	 * @param strIri The IRI of the ontology to map as a string
-	 * @param path The path to the local file
-	 */
-	public void addLocalIRIMapper(String strIri, String path) {
-		this.addLocalIRIMapper(IRI.create(Objects.requireNonNull(strIri, "IRI should never be null")), path);
-	}
-
-	/**
-	 * Merges another ontology with a previously loaded one
-	 * @param inputStream The input stream containing the ontology to merge
-	 * @throws OWLOntologyCreationException If the ontology cannot be merged
-	 */
-	public void mergeOtherOntology(InputStream inputStream) throws OWLOntologyCreationException {
-		final OWLOntology otherOntology = manager.loadOntologyFromOntologyDocument(Objects.requireNonNull(inputStream, "InputStream should never be null"));
-		final IRI mergedIRI = Objects.requireNonNull(IRI.create(otherOntology.getOntologyID().getOntologyIRI().get() + "-merged"), "Merged IRI should never be null");
-		ontology = Objects.requireNonNull(new OWLOntologyMerger(manager).createMergedOntology(manager, mergedIRI), "Merged ontology should never be null");
-	}
-
-	/**
-	 * Merges another ontology with a previously loaded one
-	 * @param path The path to the file containing the ontology to merge
-	 * @throws OWLOntologyCreationException If the ontology cannot be merged
-	 */
-	public void mergeOtherOntology(String path) throws OWLOntologyCreationException {
-		try {
-			this.mergeOtherOntology(new FileInputStream(path));
-		} catch (FileNotFoundException e) {
-			throw new OWLOntologyCreationException("The ontology file was not found: " + path, e);
-		}
-	}
 
 	/**
 	 * Adds an individual of a specified class to the ontology, unless the individual already exists
@@ -1095,49 +950,13 @@ public class OWLOntologyWrapper {
 	}
 	
 	/**
-	 * Removes all individuals of the specified class from the ontology
-	 * @param classIRI The IRI of a class in the ontology
+	 * Returns the label (rdfs:label) of an ontology element in a specific language, if available.
+	 * @param elementIRI The IRI of the element in the ontology
+	 * @param lang The language code (e.g., "es" or "en")
+	 * @return The label in the given language, or an empty Optional if none is found
 	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public void removeIndividualsOfClass(String classIRI) {
-		final OWLClass owlClass = factory.asOWLClass(classIRI, pm);
-		final NodeSet<OWLNamedIndividual> individualsNodeSet = reasoner.getInstances(owlClass, false);
-		final Set<OWLNamedIndividual> individuals = OWLAPIStreamUtils.asSet(individualsNodeSet.entities());
-		final OWLEntityRemover remover = new OWLEntityRemover(Collections.singleton(ontology));
-		for (OWLNamedIndividual individual : individuals) {
-			individual.accept(remover);
-		}
-		manager.applyChanges(remover.getChanges());
-		remover.reset();
-	}
-	
-	/**
-	 * Creates a subclass relationship between the specified class and its superclass
-	 * @param classIRI The IRI of the class to be created
-	 * @param superclassIRI The IRI of the superclass
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public void createClassSubClassOf(String classIRI, String superclassIRI) {
-		final OWLClassExpression owlSuperClass = factory.asOWLClass(superclassIRI, pm);
-		final OWLClass owlClass = factory.asOWLClass(classIRI, pm);
-		OWLSubClassOfAxiom ax = factory.getOWLSubClassOfAxiom(owlClass, owlSuperClass);
-		AddAxiom addAx = new AddAxiom(ontology, ax);
-	    manager.applyChange(addAx);
-	}
-	
-	/**
-	 * Collects all individuals of the specified class and changes them to subclasses of the specified class. 
-	 * Adds the prefix to the individual names to create the new class IRIs. 
-	 * @param classIRI The IRI of the class whose individuals will be changed to subclasses
-	 * @param prefix The prefix to be added to the individual names to create the new class IRIs
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public void changeInstanceToSubclass(String classIRI, String prefix) {
-		final Set<String> individuals = getIndividuals(classIRI);
-		removeIndividualsOfClass(classIRI);
-		for (String ind : individuals) {
-			createClassSubClassOf(prefix + ind, classIRI);
-		}
+	public Optional<String> getLabelForIRI(IRI elementIRI, String lang) {
+		return this.individualQuery.getLabelForIRI(elementIRI, lang);
 	}
 
 	/**
@@ -1148,23 +967,8 @@ public class OWLOntologyWrapper {
 	 */
 	@Deprecated(since = "2026-01", forRemoval = true)
 	public String getLabelForIRI(String elementIRI, String lang) {
-		OWLEntity entity = ontology.entitiesInSignature(factory.getOWLNamedIndividual(elementIRI, pm).getIRI(), Imports.INCLUDED)
-			.findFirst()
-			.orElse(null);
-		if (entity != null) {
-			for (OWLOntology o : ontology.getImportsClosure()) {
-				for (OWLAnnotation annotation :
-						EntitySearcher.getAnnotations(entity, o).collect(Collectors.toList())) {
-					if (annotation.getProperty().isLabel() && annotation.getValue().asLiteral().isPresent()) {
-						OWLLiteral literal = annotation.getValue().asLiteral().get();
-						if (literal.hasLang(lang)) {
-							return literal.getLiteral();
-						}
-					}
-				}
-			}
-		}
-		return null;
+		Optional<String> labelOpt = getLabelForIRI(toIRI(elementIRI), lang);
+		return labelOpt.orElse(null);
 	}
 
 	/**
@@ -1192,7 +996,7 @@ public class OWLOntologyWrapper {
         // can't explain the inconsistency. This can be controlled via a configuration setting.  
         Configuration configuration = new Configuration();
         configuration.throwInconsistentOntologyException = false;
-        OWLReasoner reasoner = factory.createReasoner(ontology, configuration);
+        OWLReasoner reasoner = factory.createReasoner(ctx.getOntology(), configuration);
         // Ok, here we go. Let's see why the ontology is inconsistent. 
         System.out.println("Computing explanations for the inconsistency...");
         factory = new ReasonerFactory() {
@@ -1220,7 +1024,7 @@ public class OWLOntologyWrapper {
             }
         } 
         else {*/
-            BlackBoxExplanation exp = new BlackBoxExplanation(ontology, factory, reasoner);
+            BlackBoxExplanation exp = new BlackBoxExplanation(ctx.getOntology(), factory, reasoner);
             HSTExplanationGenerator multExplanator = new HSTExplanationGenerator(exp);
             // Now we can get explanations for the inconsistency
             //Set<Set<OWLAxiom>> explanations = multExplanator.getExplanations(dataFactory.getOWLNothing());
@@ -1242,7 +1046,7 @@ public class OWLOntologyWrapper {
 	 */
     public Set<OWLAxiom> getInferredAxioms() {
         OWLReasonerFactory reasonerFactory = new ReasonerFactory(); // HermiT
-        OWLReasoner reasoner = reasonerFactory.createReasoner(ontology);
+        OWLReasoner reasoner = reasonerFactory.createReasoner(ctx.getOntology());
 
         // Inference generator
         InferredOntologyGenerator iog = new InferredOntologyGenerator(reasoner);
@@ -1269,54 +1073,6 @@ public class OWLOntologyWrapper {
         return inferredOnt.getAxioms();
     }
 
-    public void replaceMin0ByOnlyRecursive() {
-        final OWLDataFactory factory = manager.getOWLDataFactory();
-        Set<OWLAxiom> axiomsToRemove = new HashSet<>();
-        Set<OWLAxiom> axiomsToAdd = new HashSet<>();
-
-        for (OWLSubClassOfAxiom ax : ontology.getAxioms(AxiomType.SUBCLASS_OF)) {
-            OWLClassExpression subCls = ax.getSubClass();
-            OWLClassExpression superCls = ax.getSuperClass();
-
-            OWLClassExpression newSuperCls = replaceMin0InExpression(superCls, factory);
-            if (!newSuperCls.equals(superCls)) {
-                axiomsToRemove.add(ax);
-                axiomsToAdd.add(factory.getOWLSubClassOfAxiom(subCls, newSuperCls));
-            }
-        }
-
-        manager.removeAxioms(ontology, axiomsToRemove);
-        manager.addAxioms(ontology, axiomsToAdd);
-    }
-
-    private OWLClassExpression replaceMin0InExpression(OWLClassExpression expr, OWLDataFactory factory) {
-        // Si es una restricción de min cardinality
-        if (expr instanceof OWLObjectMinCardinality) {
-            OWLObjectMinCardinality minCard = (OWLObjectMinCardinality) expr;
-            if (minCard.getCardinality() == 0) {
-                return factory.getOWLObjectAllValuesFrom(minCard.getProperty().asOWLObjectProperty(), minCard.getFiller());
-            }
-        }
-        else if (expr instanceof OWLDataMinCardinality) {
-            OWLDataMinCardinality minCard = (OWLDataMinCardinality) expr;
-            if (minCard.getCardinality() == 0) {
-                return factory.getOWLDataAllValuesFrom(minCard.getProperty().asOWLDataProperty(), minCard.getFiller());
-            }
-        }
-
-        // Si es una intersección, se procesa recursivamente cada operando
-        if (expr instanceof OWLObjectIntersectionOf) {
-            List<OWLClassExpression> newOperands = ((OWLObjectIntersectionOf) expr).getOperands().stream()
-                    .map(e -> replaceMin0InExpression(e, factory))
-                    .collect(Collectors.toList());
-            return factory.getOWLObjectIntersectionOf(newOperands);
-        }
-
-        // Si es unión, complemento, etc., se puede extender de forma similar
-        // Por ahora devolvemos el mismo si no se cumple nada
-        return expr;
-    }
-
 	/**
 	 * Prints a list of individuals, their classes, object properties and data properties.
 	 * If full is true, it prints the individual name, class, object properties and data properties.
@@ -1325,15 +1081,16 @@ public class OWLOntologyWrapper {
 	 */
 	public void printIndividuals(boolean full) {
 		if (full) {
-			for (String individual : individualsToString()) {
-				final ArrayList<String> props = getIndividualProperties(individual, "\t");
+			for (IRI individual : individualQuery.getIndividualsInSignature(Imports.EXCLUDED)) {
+				final ArrayList<String> props = getIndividualProperties(individual.getShortForm(), "\t");
 				for (String prop : props)
 					System.out.println(individual + "\t" + prop);
 			}
 		}
 		else  {
-			for (String individual : individualsToString())
+			for (IRI individual : individualQuery.getIndividualsInSignature(Imports.EXCLUDED)) {
 				System.out.println(individual);
+			}
 		}
 	}
 
@@ -1373,9 +1130,10 @@ public class OWLOntologyWrapper {
 		}
 		
 		try {
+			OntologyLoader loader = new OntologyLoader();
+			OntologySource source;
 			if (isURI) {
-				IRI iri = IRI.create(args[0]);
-				wrapper = new OWLOntologyWrapper(iri);
+				source = new OntologySource.FromIRI(IRI.create(args[0]));
 			}
 			else {
 				final Path path = Paths.get(args[0]);
@@ -1383,8 +1141,10 @@ public class OWLOntologyWrapper {
 					System.err.println("The specified ontology file does not exist or is not a regular file: " + args[0]);
 					return;
 				}
-				wrapper = new OWLOntologyWrapper(args[0]);
+				source = new OntologySource.FromPath(path);
 			}
+			final LoadedOntology loadedOntology = loader.load(source);
+			wrapper = new OWLOntologyWrapper(loadedOntology);
 			int mode = Integer.parseInt(args[1]);
 			switch (mode) {
 				case 1:
