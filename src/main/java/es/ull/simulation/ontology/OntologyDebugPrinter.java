@@ -178,4 +178,46 @@ public final class OntologyDebugPrinter {
             out.println();
 		}
 	}
+
+	/** 
+	 * Prints the list of properties of the specified individual. This list includes the class it belongs to, the object properties and the data properties.
+	 * @param individualIRI An individual in the ontology
+	 * @param sep A separator to use between the property name and its value
+	 * @return a list of strings representing the properties of the specified individual. This list includes the class it belongs to, the object properties and the data properties.
+	 * Each string in the list is formatted as "PROPERTY_NAME" + sep + "PROPERTY_VALUE".
+	 */
+	public void prettyPrintIndividualProperties(IRI individualIRI, String sep) {
+		for (IRI clazz : individualQuery.getAssertedTypesWithSuperclasses(individualIRI, Imports.INCLUDED)) {
+		    out.println(individualIRI.getShortForm() + sep + "SUBCLASS_OF" + sep + clazz.getShortForm());
+		}
+        Map<IRI, Set<IRI>> objProps = individualQuery.getAllObjectPropertyValues(individualIRI, Imports.INCLUDED);
+        for (Map.Entry<IRI, Set<IRI>> entry : objProps.entrySet())
+            for (IRI value : entry.getValue())
+                out.println(individualIRI.getShortForm() + sep + entry.getKey().getShortForm() + sep + value.getShortForm());
+        Map<IRI, Set<OWLLiteral>> dataProps = individualQuery.getAllDataPropertyValues(individualIRI, Imports.INCLUDED);
+        for (Map.Entry<IRI, Set<OWLLiteral>> entry : dataProps.entrySet())
+            for (OWLLiteral value : entry.getValue())
+                out.println(individualIRI.getShortForm() + sep + entry.getKey().getShortForm() + sep + value.getLiteral());
+	}
+	
+	/**
+	 * Prints a list of individuals, their classes, object properties and data properties.
+	 */
+	public void prettyPrintIndividuals() {
+        for (IRI individual : individualQuery.getIndividualsInSignature(Imports.EXCLUDED)) {
+            prettyPrintIndividualProperties(individual,  "\t");
+        }
+	}
+
+	/**
+	 * Prints a list of individuals of the specified class, their properties and values.
+	 * @param classIRI The IRI of the class whose individuals will be printed
+	 */
+	public void prettyPrintIndividuals(String classIRI) {
+        Objects.requireNonNull(classIRI, "classIRI must not be null");
+        final Set<IRI> individualIris = individualQuery.getIndividualsOfClass(IRI.create(classIRI), Imports.INCLUDED);
+        for (IRI individual : individualIris) {
+            prettyPrintIndividualProperties(individual,  "\t");
+        }
+	}
 }

@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.semanticweb.owlapi.util.SimpleIRIMapper;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +23,11 @@ import es.ull.simulation.ontology.OWLOntologyWrapper.InstanceCheckMode;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 public class OntologyTest {
@@ -222,42 +225,51 @@ public class OntologyTest {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
         // Checking individuals
         // These should be ok...
-        assertNotNull(ontologyWrapper.asOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
-        assertTrue(ontologyWrapper.findOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
+        final IRI testPreloadedDiseaseIndividualIRI = ontologyWrapper.toIRI(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        final IRI testDiseaseIndividualIRI = ontologyWrapper.toIRI(TEST_DISEASE_INDIVIDUAL);
+        assertNotNull(ontologyWrapper.asOWLIndividual(testPreloadedDiseaseIndividualIRI), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
+        assertTrue(ontologyWrapper.findOWLIndividual(testPreloadedDiseaseIndividualIRI).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
         // This should be ok...
-        assertTrue(ontologyWrapper.findOWLIndividual(TEST_DISEASE_INDIVIDUAL).isEmpty(), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist");
+        assertTrue(ontologyWrapper.findOWLIndividual(testDiseaseIndividualIRI).isEmpty(), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.asOWLIndividual(TEST_DISEASE_INDIVIDUAL), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLIndividual(testDiseaseIndividualIRI), "The individual " + TEST_DISEASE_INDIVIDUAL + " should not exist but this method should work anyway");
         log.debug("Access to individuals checked");
         ontologyWrapper.getIndividualsInSignature(Imports.INCLUDED).forEach(ind -> log.debug(" - " + ind));
         // Checking classes
         // These should be ok...
-        assertNotNull(ontologyWrapper.asOWLClass(TEST_DISEASE_CLASS), "The class " + TEST_DISEASE_CLASS + " should exist");
-        assertTrue(ontologyWrapper.findOWLClass(TEST_MODEL_CLASS).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
+        final IRI testDiseaseClassIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
+        final IRI testModelClassIRI = ontologyWrapper.toIRI(TEST_MODEL_CLASS);
+        final IRI testInvalidClassIRI = ontologyWrapper.toIRI(TEST_INVALID_CLASS);
+        assertNotNull(ontologyWrapper.asOWLClass(testDiseaseClassIRI), "The class " + TEST_DISEASE_CLASS + " should exist");
+        assertTrue(ontologyWrapper.findOWLClass(testModelClassIRI).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
         // This should be ok...
-        assertTrue(ontologyWrapper.findOWLClass(TEST_INVALID_CLASS).isEmpty(), "The class " + TEST_INVALID_CLASS + " should not exist");
+        assertTrue(ontologyWrapper.findOWLClass(testInvalidClassIRI).isEmpty(), "The class " + TEST_INVALID_CLASS + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.asOWLClass(TEST_INVALID_CLASS), "The class " + TEST_INVALID_CLASS + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLClass(testInvalidClassIRI), "The class " + TEST_INVALID_CLASS + " should not exist but this method should work anyway");
         log.debug("Access to classes checked");
         ontologyWrapper.getClassesInSignature(Imports.INCLUDED).forEach(cls -> log.debug(" - " + cls));
         // Checking dataProperties
         // These should be ok...
-        assertNotNull(ontologyWrapper.asOWLDataProperty(TEST_DISEASE_DATA_PROPERTY), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
-        assertTrue(ontologyWrapper.findOWLDataProperty(TEST_DISEASE_DATA_PROPERTY).isPresent(), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
+        final IRI testDiseaseDataPropertyIRI = ontologyWrapper.toIRI(TEST_DISEASE_DATA_PROPERTY);
+        final IRI testInvalidDiseaseDataPropertyIRI = ontologyWrapper.toIRI(TEST_INVALID_DISEASE_DATA_PROPERTY);
+        assertNotNull(ontologyWrapper.asOWLDataProperty(testDiseaseDataPropertyIRI), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
+        assertTrue(ontologyWrapper.findOWLDataProperty(testDiseaseDataPropertyIRI).isPresent(), "The data property " + TEST_DISEASE_DATA_PROPERTY + " should exist");
         // This should be ok...
-        assertTrue(ontologyWrapper.findOWLDataProperty(TEST_INVALID_DISEASE_DATA_PROPERTY).isEmpty(), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist");
+        assertTrue(ontologyWrapper.findOWLDataProperty(testInvalidDiseaseDataPropertyIRI).isEmpty(), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.asOWLDataProperty(TEST_INVALID_DISEASE_DATA_PROPERTY), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLDataProperty(testInvalidDiseaseDataPropertyIRI), "The data property " + TEST_INVALID_DISEASE_DATA_PROPERTY + " should not exist but this method should work anyway");
         log.debug("Access to data properties checked");
         ontologyWrapper.getDataPropertiesInSignature(Imports.INCLUDED).forEach(dp -> log.debug(" - " + dp));
         // Checking objectProperties
         // These should be ok...
-        assertNotNull(ontologyWrapper.asOWLObjectProperty(TEST_DISEASE_OBJ_PROPERTY), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
-        assertTrue(ontologyWrapper.findOWLObjectProperty(TEST_DISEASE_OBJ_PROPERTY).isPresent(), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
+        final IRI testDiseaseObjectPropertyIRI = ontologyWrapper.toIRI(TEST_DISEASE_OBJ_PROPERTY);
+        final IRI testInvalidDiseaseObjectPropertyIRI = ontologyWrapper.toIRI(TEST_INVALID_DISEASE_OBJ_PROPERTY);
+        assertNotNull(ontologyWrapper.asOWLObjectProperty(testDiseaseObjectPropertyIRI), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
+        assertTrue(ontologyWrapper.findOWLObjectProperty(testDiseaseObjectPropertyIRI).isPresent(), "The object property " + TEST_DISEASE_OBJ_PROPERTY + " should exist");
         // This should be ok...
-        assertTrue(ontologyWrapper.findOWLObjectProperty(TEST_INVALID_DISEASE_OBJ_PROPERTY).isEmpty(), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist");
+        assertTrue(ontologyWrapper.findOWLObjectProperty(testInvalidDiseaseObjectPropertyIRI).isEmpty(), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist");
         // ... but this too
-        assertNotNull(ontologyWrapper.asOWLObjectProperty(TEST_INVALID_DISEASE_OBJ_PROPERTY), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist but this method should work anyway");
+        assertNotNull(ontologyWrapper.asOWLObjectProperty(testInvalidDiseaseObjectPropertyIRI), "The object property " + TEST_INVALID_DISEASE_OBJ_PROPERTY + " should not exist but this method should work anyway");
         log.debug("Access to object properties checked");
         ontologyWrapper.getObjectPropertiesInSignature(Imports.INCLUDED).forEach(op -> log.debug(" - " + op));
     }
@@ -265,43 +277,59 @@ public class OntologyTest {
     @Test
     public void testOntologyStructure() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        assertTrue(ontologyWrapper.isInstanceOf(TEST_PRELOADED_DISEASE_INDIVIDUAL, TEST_DISEASE_CLASS),
+        final IRI testPreloadedDiseaseIndividualIRI = ontologyWrapper.toIRI(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        final IRI testDiseaseClassIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
+        final IRI testSuperClassIRI = ontologyWrapper.toIRI(TEST_SUPER_CLASS);
+        final IRI testModelClassIRI = ontologyWrapper.toIRI(TEST_MODEL_CLASS);
+        assertTrue(ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testDiseaseClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED),
             "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should be a subclass of " + TEST_DISEASE_CLASS); 
-        assertTrue(ontologyWrapper.isInstanceOf(TEST_PRELOADED_DISEASE_INDIVIDUAL, TEST_SUPER_CLASS),
-            "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should be a subclass of " + TEST_SUPER_CLASS);
-        assertTrue(!ontologyWrapper.isInstanceOf(TEST_PRELOADED_DISEASE_INDIVIDUAL, TEST_MODEL_CLASS),
+        assertTrue(!ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testSuperClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED),
+            "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should not be determined to be a subclass of " + TEST_SUPER_CLASS + " without inference");
+        assertTrue(ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testSuperClassIRI, Imports.INCLUDED, InstanceCheckMode.INFERRED_ALL),
+            "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should be a subclass of " + TEST_SUPER_CLASS + " with inference");
+        assertTrue(!ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testModelClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED),
             "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should not be a subclass of " + TEST_MODEL_CLASS);
 
-        Set<String> clazzes = ontologyWrapper.getIndividualClasses(TEST_PRELOADED_DISEASE_INDIVIDUAL, true);
+        Set<IRI> classIRIs = ontologyWrapper.getAssertedTypes(testPreloadedDiseaseIndividualIRI, true, Imports.INCLUDED);
         log.debug("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
-        clazzes.forEach(c -> log.debug(" - " + c));
-        assertTrue(clazzes.size() == 3, TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to 3 classes");
-        assertTrue(clazzes.contains(TEST_DISEASE_CLASS), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_DISEASE_CLASS);
-        assertTrue(clazzes.contains(TEST_SUPER_CLASS), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_SUPER_CLASS);
-        clazzes = ontologyWrapper.getIndividualClasses(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        classIRIs.forEach(c -> log.debug(" - " + c));
+        assertTrue(classIRIs.size() == 2, TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to 2 classes");
+        assertTrue(classIRIs.contains(testDiseaseClassIRI), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_DISEASE_CLASS);
+        assertTrue(classIRIs.contains(testSuperClassIRI), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_SUPER_CLASS);
+        classIRIs = ontologyWrapper.getAssertedTypes(testPreloadedDiseaseIndividualIRI, false, Imports.INCLUDED);
         log.debug("DIRECT Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
-        clazzes.forEach(c -> log.debug(" - " + c));
-        assertTrue(clazzes.size() == 1, TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to 1 class");
-        assertTrue(clazzes.contains(TEST_DISEASE_CLASS), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_DISEASE_CLASS);
-        assertTrue(!clazzes.contains(TEST_SUPER_CLASS), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should not (directly) belong to class " + TEST_SUPER_CLASS);
+        classIRIs.forEach(c -> log.debug(" - " + c));
+        assertTrue(classIRIs.size() == 1, TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to 1 class");
+        assertTrue(classIRIs.contains(testDiseaseClassIRI), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_DISEASE_CLASS);
+        assertTrue(!classIRIs.contains(testSuperClassIRI), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should not (directly) belong to class " + TEST_SUPER_CLASS);
     }
 
     @Test
     public void testLabelRetrieval() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        String label = ontologyWrapper.getLabelForIRI(TEST_PRELOADED_DISEASE_INDIVIDUAL, "en");
-        log.debug("Label for " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " in English: " + label);
-        assertEquals("Biotinidase deficiency", label, "Label should match");
-        label = ontologyWrapper.getLabelForIRI(TEST_PRELOADED_DISEASE_INDIVIDUAL, "es");
-        log.debug("Label for " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " in Spanish: " + label);
-        assertEquals("Deficiencia de biotinidasa", label, "Label should match");
+        final IRI testPreloadedDiseaseIndividualIRI = ontologyWrapper.toIRI(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        Optional<String> label = ontologyWrapper.getLabelForIRI(testPreloadedDiseaseIndividualIRI, "en");
+        assertTrue(label.isPresent(), "Label for " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " in English should be present");
+        log.debug("Label for " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " in English: " + label.get());
+        assertEquals("Biotinidase deficiency", label.get(), "Label should match");
+        label = ontologyWrapper.getLabelForIRI(testPreloadedDiseaseIndividualIRI, "es");
+        assertTrue(label.isPresent(), "Label for " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " in Spanish should be present");
+        log.debug("Label for " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " in Spanish: " + label.get());
+        assertEquals("Deficiencia de biotinidasa", label.get(), "Label should match");
     }
 
     @Test
     public void testOntologyDoubleLoading() throws OWLOntologyCreationException {
-        // FIXME: Check whether I should switch the order of loading (data first, then schema)
         final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(SCHEMA_FILE)));
-        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
+        final URL url = Objects.requireNonNull(getClass().getResource(SCHEMA_FILE));
+        final IRI localSchemaFileIRI = Objects.requireNonNull(IRI.create(url));
+        log.debug("Schema file IRI: " + localSchemaFileIRI);
+        final IRI schemaFileVersionIRI = Objects.requireNonNull(loaded.ontology().getOntologyID().getOntologyIRI().get());
+        SimpleIRIMapper mapper = new SimpleIRIMapper(schemaFileVersionIRI, localSchemaFileIRI);
+        loaded.manager().getIRIMappers().add(mapper);
+
+        final LoadedOntology loadedWithMapping = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)), loaded.manager());
+        final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loadedWithMapping);
         log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
         
         final OWLOntology mergedOntology = ontologyWrapper.loadOntology(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)));
@@ -314,9 +342,9 @@ public class OntologyTest {
         log.debug("IRI to check: " + testPreloadedDiseaseIndividualIRI);
         assertTrue(ontologyWrapper.findOWLClass(testModelClassIRI).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
         assertTrue(ontologyWrapper.findOWLIndividual(testPreloadedDiseaseIndividualIRI).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
-        Set<String> diseaseClasses = ontologyWrapper.getIndividualClasses(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        Set<IRI> diseaseClasseIRIs = ontologyWrapper.getAssertedTypes(testPreloadedDiseaseIndividualIRI, true, Imports.INCLUDED);
         log.debug("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
-        diseaseClasses.forEach(c -> log.debug(" - " + c));
+        diseaseClasseIRIs.forEach(c -> log.debug(" - " + c));
     }
 
     @Test
