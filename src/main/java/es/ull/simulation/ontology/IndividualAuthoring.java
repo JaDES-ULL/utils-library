@@ -160,10 +160,10 @@ public final class IndividualAuthoring {
         Objects.requireNonNull(objectIri, "objectIri must not be null");
 
         if (!ctx.getOntology().containsIndividualInSignature(subjectIri, Imports.INCLUDED)) {
-            throw new IllegalStateException("Subject individual does not exist (Imports.INCLUDED): " + subjectIri);
+            throw new IllegalArgumentException("Subject individual does not exist (Imports.INCLUDED): " + subjectIri);
         }
         if (!ctx.getOntology().containsIndividualInSignature(objectIri, Imports.INCLUDED)) {
-            throw new IllegalStateException("Object individual does not exist (Imports.INCLUDED): " + objectIri);
+            throw new IllegalArgumentException("Object individual does not exist (Imports.INCLUDED): " + objectIri);
         }
         if (!ctx.getOntology().containsObjectPropertyInSignature(propertyIri, Imports.INCLUDED)) {
             throw new IllegalArgumentException("Object property not in signature (Imports.INCLUDED): " + propertyIri);
@@ -218,7 +218,7 @@ public final class IndividualAuthoring {
         Objects.requireNonNull(value, "value must not be null");
 
         if (!ctx.getOntology().containsIndividualInSignature(subjectIri, Imports.INCLUDED)) {
-            throw new IllegalStateException("Subject individual does not exist (Imports.INCLUDED): " + subjectIri);
+            throw new IllegalArgumentException("Subject individual does not exist (Imports.INCLUDED): " + subjectIri);
         }
         if (!ctx.getOntology().containsDataPropertyInSignature(dataPropertyIri, Imports.INCLUDED)) {
             throw new IllegalArgumentException("Data property not in signature (Imports.INCLUDED): " + dataPropertyIri);

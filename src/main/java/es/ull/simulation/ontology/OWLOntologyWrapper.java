@@ -930,7 +930,7 @@ public class OWLOntologyWrapper {
 	 * @param classIRI The IRI of a class in the ontology
 	 * @return a set containing solely those individuals from the passed collection that belongs to the specified class
 	 */
-	public Set<IRI> getIndividualsSubclassOf(Collection<IRI> individuals, IRI classIRI) {
+	public Set<IRI> pickIndividualsSubclassOf(Collection<IRI> individuals, IRI classIRI) {
 		final Set<IRI> result = getIndividualsOfClass(classIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED); 
 		result.retainAll(individuals);
 		return result;
@@ -943,7 +943,7 @@ public class OWLOntologyWrapper {
 	 * @return a set containing solely those individuals from the passed collection that belongs to the specified class
 	 */
 	@Deprecated(since = "2026-01", forRemoval = true)
-	public Set<String> getIndividualsSubclassOf(Collection<String> individuals, String classIRI) {
+	public Set<String> pickIndividualsSubclassOf(Collection<String> individuals, String classIRI) {
 		final Set<String> result = getIndividuals(classIRI); 
 		result.retainAll(individuals);
 		return result;

@@ -17,6 +17,7 @@ import es.ull.simulation.ontology.LoadedOntology;
 import es.ull.simulation.ontology.OntologyLoader;
 import es.ull.simulation.ontology.OWLOntologyWrapper;
 import es.ull.simulation.ontology.OntologySource;
+import es.ull.simulation.ontology.OWLOntologyWrapper.InstanceCheckMode;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,88 +94,127 @@ public class OntologyTest {
     public void testRemoteIndividualsLoading() throws OWLOntologyCreationException {
         final LoadedOntology loaded = loader.load(new OntologySource.FromIRI(IRI.create(REMOTE_INDIVIDUALS_VERSIONED_IRI)));
         final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
-        final Set<String> diseases = ontologyWrapper.getIndividuals(TEST_DISEASE_CLASS);
-        assertTrue(diseases.contains(REMOTE_TEST_DISEASE_INDIVIDUAL), "The disease individual " + REMOTE_TEST_DISEASE_INDIVIDUAL + " should be present");
-        assertTrue(!diseases.contains(TEST_DISEASE_INDIVIDUAL), "The disease individual " + TEST_DISEASE_INDIVIDUAL + " should not be present");
-        final Set<String> dataItemTypes = ontologyWrapper.getIndividuals(REMOTE_TEST_DATAITEMTYPE_CLASS);
-        assertTrue(dataItemTypes.contains(REMOTE_TEST_DATAITEMTYPE_INDIVIDUAL), "The DataItemType individual " + REMOTE_TEST_DATAITEMTYPE_INDIVIDUAL + " should be present");
-        dataItemTypes.forEach(ind -> log.debug(" - " + ind));
+        final IRI classDiseaseIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
+        final IRI individualDiseaseIRI = ontologyWrapper.toIRI(REMOTE_TEST_DISEASE_INDIVIDUAL);
+        final IRI wrongIndividualDiseaseIRI = ontologyWrapper.toIRI(TEST_DISEASE_INDIVIDUAL);
+        final Set<IRI> diseaseIRIs = ontologyWrapper.getIndividualsOfClass(classDiseaseIRI, Imports.INCLUDED, InstanceCheckMode.INFERRED_ALL);
+        assertTrue(diseaseIRIs.contains(individualDiseaseIRI), "The disease individual " + REMOTE_TEST_DISEASE_INDIVIDUAL + " should be present");
+        assertTrue(!diseaseIRIs.contains(wrongIndividualDiseaseIRI), "The disease individual " + TEST_DISEASE_INDIVIDUAL + " should not be present");
+        final IRI dataItemTypeIRI = ontologyWrapper.toIRI(REMOTE_TEST_DATAITEMTYPE_CLASS);
+        final Set<IRI> dataItemTypeIRIs = ontologyWrapper.getIndividualsOfClass(dataItemTypeIRI, Imports.INCLUDED, InstanceCheckMode.INFERRED_ALL);
+        assertTrue(dataItemTypeIRIs.contains(ontologyWrapper.toIRI(REMOTE_TEST_DATAITEMTYPE_INDIVIDUAL)), "The DataItemType individual " + REMOTE_TEST_DATAITEMTYPE_INDIVIDUAL + " should be present");
+        log.debug("Individuals of class " + REMOTE_TEST_DATAITEMTYPE_CLASS + ":");
+        dataItemTypeIRIs.forEach(ind -> log.debug(" - " + ind));
     }
 
     @Test
     public void testOntologyIndividuals() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        assertTrue(ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
+        final IRI classDiseaseIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
+        final IRI individualDiseaseIRI = ontologyWrapper.toIRI(TEST_DISEASE_INDIVIDUAL);
+        final IRI preloadedIndividualDiseaseIRI = ontologyWrapper.toIRI(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        assertTrue(ontologyWrapper.createIndividual(classDiseaseIRI, individualDiseaseIRI));
         // If the individual was created correctly, this call should return false
-        assertTrue(!ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
+        assertTrue(!ontologyWrapper.createIndividual(classDiseaseIRI, individualDiseaseIRI));
         // And this should be false too, since it was already present
-        assertTrue(!ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_PRELOADED_DISEASE_INDIVIDUAL));
-        log.debug("Individuals in the ontology:");
-        ontologyWrapper.getIndividuals(TEST_DISEASE_CLASS).forEach(ind -> log.debug(" - " + ind));
+        assertTrue(!ontologyWrapper.createIndividual(classDiseaseIRI, preloadedIndividualDiseaseIRI));
+        log.debug("Individuals in the ontology (inferred):");
+        ontologyWrapper.getIndividualsOfClass(classDiseaseIRI, Imports.INCLUDED, InstanceCheckMode.INFERRED_ALL).forEach(ind -> log.debug(" - " + ind));
     }
 
     @Test
     public void testAddObjectPropertyValue() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        assertTrue(ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
-        assertTrue(ontologyWrapper.createIndividual(TEST_MODEL_CLASS, TEST_MODEL_INDIVIDUAL));
+        final IRI diseaseClassIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
+        final IRI modelClassIRI = ontologyWrapper.toIRI(TEST_MODEL_CLASS);
+        final IRI diseaseIndividualIRI = ontologyWrapper.toIRI(TEST_DISEASE_INDIVIDUAL);
+        final IRI modelIndividualIRI = ontologyWrapper.toIRI(TEST_MODEL_INDIVIDUAL);
+        assertTrue(ontologyWrapper.createIndividual(diseaseClassIRI, diseaseIndividualIRI));
+        assertTrue(ontologyWrapper.createIndividual(modelClassIRI, modelIndividualIRI));
 
+        final IRI includedByModelPropertyIRI = ontologyWrapper.toIRI(TEST_DISEASE_OBJ_PROPERTY);
+        final IRI invalidObjectPropertyIRI = ontologyWrapper.toIRI(TEST_INVALID_DISEASE_OBJ_PROPERTY);
+        final IRI invalidDiseaseIndividualIRI = ontologyWrapper.toIRI(TEST_INVALID_DISEASE_INDIVIDUAL);
+        final IRI invalidModelIndividualIRI = ontologyWrapper.toIRI(TEST_INVALID_MODEL_INDIVIDUAL);
         // Valid case: T1DM is included by model T1DM_Model
-        boolean added = ontologyWrapper.assertObjectProperty(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
+        boolean added = ontologyWrapper.assertObjectProperty(diseaseIndividualIRI, includedByModelPropertyIRI, modelIndividualIRI);
         assertTrue(added, "The object property value should be added");
 
         // Invalid case: "T2DM" does not exist
-        added = ontologyWrapper.assertObjectProperty(TEST_INVALID_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
-        assertTrue(!added, "The object property value should not be added");
+        assertThrows(IllegalArgumentException.class, () -> {
+            ontologyWrapper.assertObjectProperty(invalidDiseaseIndividualIRI, includedByModelPropertyIRI, modelIndividualIRI);
+        }, "Asserting an object property for a non-existing individual should throw exception");
+        added = ontologyWrapper.assertObjectProperty(diseaseIndividualIRI, includedByModelPropertyIRI, modelIndividualIRI);
+        assertTrue(!added, "The object property value should not be added because it already exists");
         // Invalid case: "T2DM_Model" does not exist
-        added = ontologyWrapper.assertObjectProperty(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY, TEST_INVALID_MODEL_INDIVIDUAL);
-        assertTrue(!added, "The object property value should not be added");
+        assertThrows(IllegalArgumentException.class, () -> {
+            ontologyWrapper.assertObjectProperty(diseaseIndividualIRI, includedByModelPropertyIRI, invalidModelIndividualIRI);
+        }, "Asserting an object property for a non-existing individual should throw exception");
         // Invalid case: "included" does not exist
-        added = ontologyWrapper.assertObjectProperty(TEST_DISEASE_INDIVIDUAL, TEST_INVALID_DISEASE_OBJ_PROPERTY, TEST_MODEL_INDIVIDUAL);
-        assertTrue(!added, "The object property value should not be added");
-        Set<String> includedByModel = ontologyWrapper.getObjectPropertyValues(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_OBJ_PROPERTY);
+        assertThrows(IllegalArgumentException.class, () -> {
+            ontologyWrapper.assertObjectProperty(diseaseIndividualIRI, invalidObjectPropertyIRI, modelIndividualIRI);
+        }, "Asserting an object property for a non-existing property should throw exception");
+        Set<IRI> includedByModelIris = ontologyWrapper.getObjectPropertyValues(diseaseIndividualIRI, includedByModelPropertyIRI, Imports.INCLUDED);
         log.debug("Property values for '" + TEST_DISEASE_OBJ_PROPERTY + "' of " + TEST_DISEASE_INDIVIDUAL + ":");
-        includedByModel.forEach(ind -> log.debug(" - " + ind));
-        assertTrue(includedByModel.contains(TEST_MODEL_INDIVIDUAL), "The includedByModel property should contain " + TEST_MODEL_INDIVIDUAL);
-        assertTrue(includedByModel.size() == 1, "The includedByModel property should have exactly one value");
+        includedByModelIris.forEach(ind -> log.debug(" - " + ind));
+        assertTrue(includedByModelIris.contains(modelIndividualIRI), "The includedByModel property should contain " + TEST_MODEL_INDIVIDUAL);
+        assertTrue(includedByModelIris.size() == 1, "The includedByModel property should have exactly one value");
     }
 
     @Test
     public void testAddDataPropertyValue() throws OWLOntologyCreationException {
         final OWLOntologyWrapper ontologyWrapper = createDefaultOwlOntologyWrapper();
-        assertTrue(ontologyWrapper.createIndividual(TEST_DISEASE_CLASS, TEST_DISEASE_INDIVIDUAL));
-        assertTrue(ontologyWrapper.createIndividual(TEST_MODEL_CLASS, TEST_MODEL_INDIVIDUAL));
+        final IRI diseaseClassIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
+        final IRI modelClassIRI = ontologyWrapper.toIRI(TEST_MODEL_CLASS);
+        final IRI diseaseIndividualIRI = ontologyWrapper.toIRI(TEST_DISEASE_INDIVIDUAL);
+        final IRI modelIndividualIRI = ontologyWrapper.toIRI(TEST_MODEL_INDIVIDUAL);
 
+        assertTrue(ontologyWrapper.createIndividual(diseaseClassIRI, diseaseIndividualIRI));
+        assertTrue(ontologyWrapper.createIndividual(modelClassIRI, modelIndividualIRI));
+
+        final IRI invalidDiseaseIndividualIRI = ontologyWrapper.toIRI(TEST_INVALID_DISEASE_INDIVIDUAL);
+        final IRI invalidModelIndividualIRI = ontologyWrapper.toIRI(TEST_INVALID_MODEL_INDIVIDUAL);
+        final IRI diseaseDataPropertyIRI = ontologyWrapper.toIRI(TEST_DISEASE_DATA_PROPERTY);
+        final IRI invalidDiseaseDataPropertyIRI = ontologyWrapper.toIRI(TEST_INVALID_DISEASE_DATA_PROPERTY);
+        final IRI modelDataPropertyIRI = ontologyWrapper.toIRI(TEST_MODEL_DATA_PROPERTY);
+        final IRI invalidModelDataPropertyIRI = ontologyWrapper.toIRI(TEST_INVALID_MODEL_DATA_PROPERTY);
         // Valid case: T1DM has a description
-        boolean added = ontologyWrapper.assertDataProperty(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
+        boolean added = ontologyWrapper.assertDataProperty(diseaseIndividualIRI, diseaseDataPropertyIRI, TEST_DISEASE_DESCRIPTION);
         assertTrue(added, "The data property value should be added");
         // Invalid case: "T2DM" does not exist
-        added = ontologyWrapper.assertDataProperty(TEST_INVALID_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
-        assertTrue(!added, "The data property value should not be added");
+        assertThrows(IllegalArgumentException.class, () -> {
+            ontologyWrapper.assertDataProperty(invalidDiseaseIndividualIRI, diseaseDataPropertyIRI, TEST_DISEASE_DESCRIPTION);
+        }, "Asserting a data property for a non-existing individual should throw exception");
+        added = ontologyWrapper.assertDataProperty(diseaseIndividualIRI, diseaseDataPropertyIRI, TEST_DISEASE_DESCRIPTION);
+        assertTrue(!added, "The data property value should not be added because it already exists");
         // Invalid case: "hasSource" does not exist
-        added = ontologyWrapper.assertDataProperty(TEST_DISEASE_INDIVIDUAL, TEST_INVALID_DISEASE_DATA_PROPERTY, TEST_DISEASE_DESCRIPTION);
-        assertTrue(!added, "The data property value should not be added");
+        assertThrows(IllegalArgumentException.class, () -> {
+            ontologyWrapper.assertDataProperty(diseaseIndividualIRI, invalidDiseaseDataPropertyIRI, TEST_DISEASE_DESCRIPTION);
+        }, "Asserting a data property for a non-existing property should throw exception");
 
         // Valid case: T1DM_Model has a year
-        added = ontologyWrapper.assertDataProperty(TEST_MODEL_INDIVIDUAL, TEST_MODEL_DATA_PROPERTY, TEST_MODEL_STUDY_YEAR, OWL2Datatype.XSD_INTEGER);
+        added = ontologyWrapper.assertDataProperty(modelIndividualIRI, modelDataPropertyIRI, TEST_MODEL_STUDY_YEAR, OWL2Datatype.XSD_INTEGER);
         assertTrue(added, "The data property value should be added");
         // Invalid case: "T2DM_Model" does not exist
-        added = ontologyWrapper.assertDataProperty(TEST_INVALID_MODEL_INDIVIDUAL, TEST_MODEL_DATA_PROPERTY, "2021", OWL2Datatype.XSD_INTEGER);
-        assertTrue(!added, "The data property value should not be added");
+        assertThrows(IllegalArgumentException.class, () -> {
+            ontologyWrapper.assertDataProperty(invalidModelIndividualIRI, modelDataPropertyIRI, "2021", OWL2Datatype.XSD_INTEGER);
+        }, "Asserting a data property for a non-existing individual should throw exception");
         // Invalid case: "hasValue" does not exist
-        added = ontologyWrapper.assertDataProperty(TEST_MODEL_INDIVIDUAL, TEST_INVALID_MODEL_DATA_PROPERTY, "23", OWL2Datatype.XSD_INTEGER);
-        assertTrue(!added, "The data property value should not be added");
+        assertThrows(IllegalArgumentException.class, () -> {
+            ontologyWrapper.assertDataProperty(modelIndividualIRI, invalidModelDataPropertyIRI, "23", OWL2Datatype.XSD_INTEGER);
+        }, "Asserting a data property for a non-existing property should throw exception");
 
-        ArrayList<String> prop = ontologyWrapper.getDataPropertyValues(TEST_DISEASE_INDIVIDUAL, TEST_DISEASE_DATA_PROPERTY);
+        Set<OWLLiteral> dataPropertyValues = ontologyWrapper.getDataPropertyValues(diseaseIndividualIRI, diseaseDataPropertyIRI, Imports.INCLUDED);
         log.debug("Property values for '" + TEST_DISEASE_DATA_PROPERTY + "' of " + TEST_DISEASE_INDIVIDUAL + ":");
-        prop.forEach(ind -> log.debug(" - " + ind));
-        assertTrue(prop.size() == 1, "The " + TEST_DISEASE_DATA_PROPERTY + " property should have exactly one value");
-        assertTrue(prop.contains(TEST_DISEASE_DESCRIPTION), "The " + TEST_DISEASE_DATA_PROPERTY + " property should contain '" + TEST_DISEASE_DESCRIPTION + "'");
-        prop = ontologyWrapper.getDataPropertyValues(TEST_MODEL_INDIVIDUAL, TEST_MODEL_DATA_PROPERTY);
+        dataPropertyValues.forEach(ind -> log.debug(" - " + ind));
+        assertTrue(dataPropertyValues.size() == 1, "The " + TEST_DISEASE_DATA_PROPERTY + " property should have exactly one value");
+        OWLLiteral descLiteral = ontologyWrapper.getDataFactory().getOWLLiteral(TEST_DISEASE_DESCRIPTION);
+        assertTrue(dataPropertyValues.contains(descLiteral), "The " + TEST_DISEASE_DATA_PROPERTY + " property should contain '" + TEST_DISEASE_DESCRIPTION + "'");
+        dataPropertyValues = ontologyWrapper.getDataPropertyValues(modelIndividualIRI, modelDataPropertyIRI, Imports.INCLUDED);
         log.debug("Property values for '" + TEST_MODEL_DATA_PROPERTY + "' of " + TEST_MODEL_INDIVIDUAL + ":");
-        prop.forEach(ind -> log.debug(" - " + ind));
-        assertTrue(prop.size() == 1, "The " + TEST_MODEL_DATA_PROPERTY + " property should have exactly one value");
-        assertTrue(prop.contains(TEST_MODEL_STUDY_YEAR), "The " + TEST_MODEL_DATA_PROPERTY + " property should contain '" + TEST_MODEL_STUDY_YEAR + "'");
+        dataPropertyValues.forEach(ind -> log.debug(" - " + ind));
+        assertTrue(dataPropertyValues.size() == 1, "The " + TEST_MODEL_DATA_PROPERTY + " property should have exactly one value");
+        assertTrue(dataPropertyValues.contains(ontologyWrapper.getDataFactory().getOWLLiteral(TEST_MODEL_STUDY_YEAR, OWL2Datatype.XSD_INTEGER)), "The " + TEST_MODEL_DATA_PROPERTY + " property should contain '" + TEST_MODEL_STUDY_YEAR + "'");
     }
 
     @Test
@@ -259,17 +299,21 @@ public class OntologyTest {
 
     @Test
     public void testOntologyDoubleLoading() throws OWLOntologyCreationException {
+        // FIXME: Check whether I should switch the order of loading (data first, then schema)
         final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(SCHEMA_FILE)));
         final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
-
-        ontologyWrapper.loadOntology(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)));
-        final OWLOntology mergedOntology = ontologyWrapper.getOntology();
+        
+        final OWLOntology mergedOntology = ontologyWrapper.loadOntology(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)));
         log.debug("Another ontology loaded. New ontology: " + mergedOntology.getOntologyID());
         // Show individuals in the merged ontology
         mergedOntology.individualsInSignature().forEach(ind -> log.debug(" - " + ind));
-        assertTrue(ontologyWrapper.findOWLClass(TEST_MODEL_CLASS).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
-        assertTrue(ontologyWrapper.findOWLIndividual(TEST_PRELOADED_DISEASE_INDIVIDUAL).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
+
+        final IRI testModelClassIRI = ontologyWrapper.toIRI(TEST_MODEL_CLASS);
+        final IRI testPreloadedDiseaseIndividualIRI = ontologyWrapper.toIRI(TEST_PRELOADED_DISEASE_INDIVIDUAL);
+        log.debug("IRI to check: " + testPreloadedDiseaseIndividualIRI);
+        assertTrue(ontologyWrapper.findOWLClass(testModelClassIRI).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
+        assertTrue(ontologyWrapper.findOWLIndividual(testPreloadedDiseaseIndividualIRI).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
         Set<String> diseaseClasses = ontologyWrapper.getIndividualClasses(TEST_PRELOADED_DISEASE_INDIVIDUAL);
         log.debug("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
         diseaseClasses.forEach(c -> log.debug(" - " + c));
