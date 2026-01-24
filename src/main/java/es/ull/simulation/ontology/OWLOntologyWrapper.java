@@ -547,6 +547,19 @@ public class OWLOntologyWrapper {
 		return individualQuery.getTypes(individualIRI, imports);
 	}
 
+	/**
+	 * Returns a set of IRIs representing the inferred types of a specified individual. If includeSuperClasses is true, 
+	 * the set will include all superclasses as well.
+	 * FIXME: This method is not consistent with other methods that use InstanceCheckMode, should be refactored. 
+	 * @param individualIRI An individual in the ontology
+	 * @param includeSuperClasses If true, the set will include all superclasses as well
+	 * @param imports Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED)
+	 * @return a set of IRIs representing the inferred types of a specified individual.
+	 */
+	public Set<IRI> getInferredTypes(IRI individualIRI, boolean includeSuperClasses, Imports imports) {
+		return reasonedQuery.getTypesInferred(individualIRI, includeSuperClasses);
+	}
+
     /**
      * Returns all asserted object property values for an individual, grouped by property.
      * @param subjectIri The IRI of the subject individual
