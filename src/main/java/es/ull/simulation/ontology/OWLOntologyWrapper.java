@@ -4,9 +4,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -245,17 +243,6 @@ public class OWLOntologyWrapper {
 	}
 
 	/**
-	 * Adds an individual of a specified class to the ontology, unless the individual already exists
-	 * @param classRef The short name of the class
-	 * @param individualRef The short name of the new individual
-	 * @return True if the individual was created; false otherwise
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public boolean createIndividual(String classRef, String individualRef) {
-		return createIndividual(toIRI(classRef), toIRI(individualRef));
-	}
-
-	/**
 	 * Asserts that the specified individual is an instance of the specified class
 	 * @param classIri The IRI of the class
 	 * @param individualIri The IRI of the individual
@@ -274,18 +261,6 @@ public class OWLOntologyWrapper {
 	 */
 	public boolean assertObjectProperty(IRI subjectIri, IRI propertyIri, IRI objectIri) {
 		return individualAuthoring.assertObjectProperty(subjectIri, propertyIri, objectIri);
-	}
-	
-	/**
-	 * Asserts that the specified source individual is linked to the destination individual via the specified object property
-	 * @param srcIndividualRef The IRI of the source individual
-	 * @param objectPropertyRef The IRI of the object property
-	 * @param destIndividualRef The IRI of the destination individual
-	 * @return True if the assertion was added; false if it already existed
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public boolean assertObjectProperty(String srcIndividualRef, String objectPropertyRef, String destIndividualRef) {
-		return assertObjectProperty(toIRI(srcIndividualRef), toIRI(objectPropertyRef), toIRI(destIndividualRef));
 	}
 
 	/**
@@ -382,31 +357,6 @@ public class OWLOntologyWrapper {
 	}
 
 	/**
-	 * Asserts a data property value for the specified individual, given a lexical value (xsd:string datatype is assumed).
-	 * @param subjectRef The IRI of the individual as a string
-	 * @param dataPropertyRef The IRI of the data property as a string
-	 * @param lexicalValue The lexical value of the data property
-	 * @return true if the data property value was added successfully; false if the axiom already exists
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public boolean assertDataProperty(String subjectRef, String dataPropertyRef, String lexicalValue) {
-		return assertDataProperty(toIRI(subjectRef), toIRI(dataPropertyRef), lexicalValue);
-	}
-
-	/**
-	 * Asserts a data property value for the specified individual, given a lexical value and a datatype.
-	 * @param subjectRef The IRI of the individual as a string
-	 * @param dataPropertyRef The IRI of the data property as a string
-	 * @param lexicalValue The lexical value of the data property
-	 * @param datatype The datatype of the data property
-	 * @return true if the data property value was added successfully; false if the axiom already exists
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public boolean assertDataProperty(String subjectRef, String dataPropertyRef, String lexicalValue, OWL2Datatype datatype) {
-		return assertDataProperty(toIRI(subjectRef), toIRI(dataPropertyRef), lexicalValue, datatype);
-	}
-
-	/**
 	 * Returns the OWLClass object for the specified class IRI, independently of whether it exists or not
 	 * @param classIri The IRI of the class
 	 * @return The OWLClass object for the specified class IRI
@@ -460,16 +410,6 @@ public class OWLOntologyWrapper {
 		return this.ontologyResolution.findOWLClass(classIri, Imports.INCLUDED);
 	}
 
-    /**
-	 * Returns the OWLClass object for the specified class short name, only if it is already defined
-	 * @param classRef The short name of the class
-	 * @return The OWLClass object for the specified class short name, wrapped in an Optional
-     */
-	@Deprecated(since = "2026-01", forRemoval = true)
-    public Optional<OWLClass> findOWLClass(String classRef) {
-        return findOWLClass(toIRI(classRef));
-    }
-
 	/**
 	 * Returns the OWLObjectProperty object for the specified object property IRI, only if it is already defined
 	 * @param propIri The IRI of the object property
@@ -477,16 +417,6 @@ public class OWLOntologyWrapper {
 	 */
 	public Optional<OWLObjectProperty> findOWLObjectProperty(IRI propIri) {
 		return this.ontologyResolution.findOWLObjectProperty(propIri, Imports.INCLUDED);
-	}
-
-	/**
-	 * Returns the OWLObjectProperty object for the specified object property short name, only if it is already defined
-	 * @param objectPropRef The short name of the object property
-	 * @return The OWLObjectProperty object for the specified object property short name, wrapped in an Optional
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-    public Optional<OWLObjectProperty> findOWLObjectProperty(String objectPropRef) {
-		return findOWLObjectProperty(toIRI(objectPropRef));    
 	}
 
 	/**
@@ -499,16 +429,6 @@ public class OWLOntologyWrapper {
 	}
 
 	/**
-	 * Returns the OWLDataProperty object for the specified data property short name, only if it is already defined
-	 * @param dataPropRef The short name of the data property
-	 * @return The OWLDataProperty object for the specified data property short name, wrapped in an Optional
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-    public Optional<OWLDataProperty> findOWLDataProperty(String dataPropRef) {
-		return findOWLDataProperty(toIRI(dataPropRef));    
-	}
-
-	/**
 	 * Returns the OWLIndividual object for the specified individual IRI, only if it is already defined
 	 * @param indIri The IRI of the individual
 	 * @return The OWLIndividual object for the specified individual IRI, wrapped in an Optional
@@ -516,16 +436,6 @@ public class OWLOntologyWrapper {
 	public Optional<OWLNamedIndividual> findOWLIndividual(IRI indIri) {
 		return this.ontologyResolution.findOWLNamedIndividual(indIri, Imports.INCLUDED);
 	}
-
-	/**
-	 * Returns the OWLIndividual object for the specified individual IRI, only if it is already defined
-	 * @param individualIRI The IRI of the individual
-	 * @return The OWLIndividual object for the specified individual IRI, wrapped in an Optional
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-    public Optional<OWLNamedIndividual> findOWLIndividual(String individualIRI) {
-		return findOWLIndividual(toIRI(individualIRI));
-    }
 
     /**
      * Returns all individuals in the ontology signature.
@@ -580,17 +490,6 @@ public class OWLOntologyWrapper {
 			case INFERRED_ALL -> this.reasonedQuery.isInstanceOfInferred(individualIri, classIri);
 		};
 	}
-
-	/**
-	 * Returns true if the specified individual is an instance of the specified class (or any of its subclasses), considering inferred axioms
-	 * @param individualIRI The IRI of an individual in the ontology
-	 * @param classIRI The IRI of a class in the ontology
-	 * @return true if the specified individual is instance of the specified class (or any of its subclasses), considering inferred axioms.
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public boolean isInstanceOf(String individualIRI, String classIRI) {
-		return isInstanceOf(toIRI(individualIRI), toIRI(classIRI), Imports.INCLUDED, InstanceCheckMode.INFERRED_ALL);
-	}
 	
 	/**
 	 * Returns true if the ontology contains the specified individual
@@ -633,18 +532,6 @@ public class OWLOntologyWrapper {
 				this.reasonedQuery.getIndividualsOfClassInferred(classIri, false);
 		};
 	}	
-
-	/**
-	 * Returns a set of individuals belonging to the specified class or any of its subclasses
-	 * @param classRef The IRI of a class in the ontology
-	 * @return a set of individuals belonging to the specified class or any of its subclasses
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public Set<String> getIndividuals(String classRef) {
-    return this.individualQuery.getIndividualsOfClass(toIRI(classRef), Imports.INCLUDED).stream()
-            .map(IRI::getShortForm)
-            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));	
-	}
 	
 	/**
 	 * Returns a set of IRIs representing the asserted types of a specified individual. If includeSuperClasses is true, 
@@ -658,32 +545,6 @@ public class OWLOntologyWrapper {
 		if (includeSuperClasses)
 			return individualQuery.getAssertedTypesWithSuperclasses(individualIRI, imports);
 		return individualQuery.getTypes(individualIRI, imports);
-	}
-
-	/** 
-	 * Returns a list of strings representing the (direct) classes of a specified individual.
-	 * @param individualIRI An individual in the ontology
-	 * @return a list of strings representing the classes of a specified individual.
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public Set<String> getIndividualClasses(String individualIRI) {
-		return getIndividualClasses(individualIRI, false);
-	}
-
-	/** 
-	 * Returns a list of strings representing the classes of a specified individual. 
-	 * If includeSuperClasses is true, the list will include all superclasses as well.
-	 * @param individualIRI An individual in the ontology
-	 * @return a list of strings representing the classes of a specified individual.
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public Set<String> getIndividualClasses(String individualIRI, boolean includeSuperClasses) {
-		final Set<String> result = new TreeSet<>();
-		final Set<IRI> individualIRIs = getAssertedTypes(toIRI(individualIRI), includeSuperClasses, Imports.INCLUDED);
-		for (IRI iri : individualIRIs) {
-			result.add(iri.getShortForm());
-		}
-		return result;		
 	}
 
     /**
@@ -717,23 +578,6 @@ public class OWLOntologyWrapper {
 		return this.individualQuery.getAllDataPropertyValues(subjectIri, imports);
 	}
 
-	/**
-	 * Returns a list of strings representing the values the specified dataProperty has for the specified individual
-	 * @param individualIRI An individual in the ontology
-	 * @param dataPropIRI A data property in the ontology
-	 * @return a list of strings representing the values the specified dataProperty has for the specified individual
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public ArrayList<String> getDataPropertyValues(String individualIRI, String dataPropIRI) {
-		final Set<OWLLiteral> literals = getDataPropertyValues(toIRI(individualIRI), toIRI(dataPropIRI), Imports.INCLUDED);
-
-		Set<String> values = new LinkedHashSet<>();
-		for (OWLLiteral lit : literals) {
-			values.add(lit.getLiteral());
-		}
-		return new ArrayList<>(values);
-	}
-
     /**
      * Returns asserted object property values for an individual.
      * @param subjectIri The IRI of the subject individual
@@ -743,22 +587,6 @@ public class OWLOntologyWrapper {
      */
     public Set<IRI> getObjectPropertyValues(final IRI subjectIri, final IRI objectPropertyIri, final Imports imports) {
 		return this.individualQuery.getObjectPropertyValues(subjectIri, objectPropertyIri, imports);
-	}
-
-	/**
-	 * Returns a set of strings representing the names of the individuals referenced by the specified objectProperty of specified individual
-	 * @param individualIRI An individual in the ontology
-	 * @param objectPropIRI An object property in the ontology
-	 * @return a set of strings representing the names of the individuals referenced by the specified objectProperty of specified individual
-	 */
-	@Deprecated(since = "2026-01", forRemoval = true)
-	public Set<String> getObjectPropertyValues(String individualIRI, String objectPropIRI) {
-		final Set<String> result = new TreeSet<>();
-		final Set<IRI> values = this.individualQuery.getObjectPropertyValues(toIRI(individualIRI), toIRI(objectPropIRI), Imports.INCLUDED);
-		for (IRI iri : values) {
-			result.add(iri.getShortForm());
-		}		
-		return result;
 	}
 	
 	/**
