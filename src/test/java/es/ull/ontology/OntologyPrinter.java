@@ -19,7 +19,7 @@ public class OntologyPrinter {
 	public static void main(String[] args) {
 		if (args.length < 2) {
 			System.out.println("Usage: java -jar " + OntologyPrinter.class.getSimpleName() + ".jar <ontology file/IRI> <mode>");
-			System.out.println("Mode can be 1 to print individuals, 2 to print classes and properties to be used in an enum");
+			System.out.println("Mode can be 1 to print individuals, 2 to print classes and properties, and 3 to print classes and properties to be used in an enum");
 			return;
 		}
 		boolean isURI = true;
@@ -28,7 +28,7 @@ public class OntologyPrinter {
 		try {
 			Integer.parseInt(args[1]);
 		} catch (NumberFormatException e) {
-			System.err.println("Mode must be an integer (1 or 2)");
+			System.err.println("Mode must be an integer (1, 2, or 3)");
 			return;
 		}
 		int mode = Integer.parseInt(args[1]);
@@ -61,6 +61,17 @@ public class OntologyPrinter {
 					wrapper.getDebugPrinter().printTabulatedIndividuals(Imports.INCLUDED);
 					break;
 				case 2:
+					System.out.println("---------------- CLASSES ----------------");
+					wrapper.getDebugPrinter().printClasses(Imports.EXCLUDED);
+                    System.out.println();
+					System.out.println("---------------- DATA PROPS ----------------");
+					wrapper.getDebugPrinter().printDataProperties(Imports.EXCLUDED);
+                    System.out.println();
+					System.out.println("---------------- OBJECT PROPS ----------------");
+					wrapper.getDebugPrinter().printObjectProperties(Imports.EXCLUDED);
+                    System.out.println();
+					break;
+				case 3:
 					System.out.println("---------------- CLASSES ----------------");
 					wrapper.getDebugPrinter().printClassesAsEnum(Imports.EXCLUDED);
                     System.out.println();
