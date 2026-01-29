@@ -3,6 +3,7 @@ package es.ull.simulation.ontology;
 import java.io.PrintStream;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -154,35 +155,61 @@ public final class OntologyDebugPrinter {
         return s.toUpperCase();
     }
 
+    /**
+     * Returns a tabulated list of individuals, their classes, object properties, data properties and annotations.
+     * Each row in the returned list corresponds to an individual and contains the following columns:
+     * 0: Individual IRI (short form, prefixed with '#')
+     * 1: Classes (short forms, separated by '; ')
+     * 2: Object Properties and their values (formatted as '#ObjectProp: #ObjectValue; ', separated by '; ')
+     * 3: Data Properties and their values (formatted as '#DataProp: DataValue; ', separated by '; ')
+     * 4: Annotations and their values (formatted as '#AnnotationProp: AnnotationValue; ', separated by '; ')
+     * 
+     * @param imports The import settings to use when querying individuals
+     * @return A list of string arrays, each representing a row in the tabulated output
+     */
+    public List<String[]> getTabulatedIndividuals(Imports imports) {
+        final List<String[]> table = new java.util.ArrayList<>();
+		for (IRI individual : individualQuery.getIndividualsInSignature(imports)) {
+            String[] row = new String[5];
+            table.add(row);
+            final Set<IRI> types = individualQuery.getTypes(individual, imports);
+            row[0] = individual.getShortForm();
+            row[1] = types.stream().map(IRI::getShortForm).collect(Collectors.joining("; "));
+            Map<IRI, Set<IRI>> objProps = individualQuery.getAllObjectPropertyValues(individual, imports);
+            StringBuilder objPropsStr = new StringBuilder();
+            for (Map.Entry<IRI, Set<IRI>> entry : objProps.entrySet())
+                for (IRI value : entry.getValue())
+                    objPropsStr.append(entry.getKey().getShortForm() + ":" + value.getShortForm() + "; ");
+            row[2] = objPropsStr.toString();
+            StringBuilder dataPropsStr = new StringBuilder();
+            Map<IRI, Set<OWLLiteral>> dataProps = individualQuery.getAllDataPropertyValues(individual, imports);
+            for (Map.Entry<IRI, Set<OWLLiteral>> entry : dataProps.entrySet())
+                for (OWLLiteral value : entry.getValue())
+                    dataPropsStr.append(entry.getKey().getShortForm() + ":\"" + value.getLiteral() + "\"; ");
+            row[3] = dataPropsStr.toString();
+            StringBuilder annotationsStr = new StringBuilder();
+            Map<IRI, Set<OWLAnnotationValue>> annotations = individualQuery.getAllAnnotationValues(individual, imports);
+            for (Map.Entry<IRI, Set<OWLAnnotationValue>> entry : annotations.entrySet())
+                for (OWLAnnotationValue value : entry.getValue())
+                    annotationsStr.append(entry.getKey().getShortForm() + ":\"" + value.toString() + "\"; ");
+            row[4] = annotationsStr.toString();
+		}
+        return table;
+    }
+        
 	/**
 	 * Prints a tabulated list of individuals, their classes, object properties and data properties.
 	 * The output is formatted as:
 	 * Individual    Class    ObjectProperties    DataProperties
-	 * #Individual1  Class1  #ObjectProp1: #ObjectValue1; #ObjectProp2: #ObjectValue2;    #DataProp1: DataValue1; #DataProp2: DataValue2;
+	 * Individual1  Class1  ObjectProp1: ObjectValue1; ObjectProp2: ObjectValue2;    DataProp1: DataValue1; DataProp2: DataValue2;
 	 */
 	public void printTabulatedIndividuals(Imports imports) {
-		System.out.print("Individual\tClass\tObjectProperties\tDataProperties\n");
+        final List<String[]> table = getTabulatedIndividuals(imports);
+		out.print("Individual\tClass\tObjectProperties\tDataProperties\tAnnotations\n");
 
-		for (IRI individual : individualQuery.getIndividualsInSignature(imports)) {
-            final Set<IRI> types = individualQuery.getTypes(individual, imports);
-
-			out.print("#" + individual.getShortForm() + "\t" + types.stream().map(IRI::getShortForm).collect(Collectors.joining(", ")) + "\t");
-            Map<IRI, Set<IRI>> objProps = individualQuery.getAllObjectPropertyValues(individual, imports);
-            for (Map.Entry<IRI, Set<IRI>> entry : objProps.entrySet())
-                for (IRI value : entry.getValue())
-                    out.print("#" + entry.getKey().getShortForm() + ": #" + value.getShortForm() + "; ");
-            out.print("\t");
-            Map<IRI, Set<OWLLiteral>> dataProps = individualQuery.getAllDataPropertyValues(individual, imports);
-            for (Map.Entry<IRI, Set<OWLLiteral>> entry : dataProps.entrySet())
-                for (OWLLiteral value : entry.getValue())
-                    out.print("#" + entry.getKey().getShortForm() + ": " + value.getLiteral() + "; ");
-            out.print("\t");
-            Map<IRI, Set<OWLAnnotationValue>> annotations = individualQuery.getAllAnnotationValues(individual, imports);
-            for (Map.Entry<IRI, Set<OWLAnnotationValue>> entry : annotations.entrySet())
-                for (OWLAnnotationValue value : entry.getValue())
-                    out.print("#" + entry.getKey().getShortForm() + ": " + value.toString() + "; ");
-            out.println();
-		}
+        for (String[] row : table) {
+            out.println(row[0] + "\t" + row[1] + "\t" + row[2] + "\t" + row[3] + "\t" + row[4]);
+        }
 	}
 
 	/** 

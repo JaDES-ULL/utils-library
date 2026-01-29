@@ -1,10 +1,16 @@
 package es.ull.simulation.ontology;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.formats.RDFJsonLDDocumentFormat;
+import org.semanticweb.owlapi.io.FileDocumentSource;
+import org.semanticweb.owlapi.io.IRIDocumentSource;
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -17,6 +23,55 @@ import org.semanticweb.owlapi.util.SimpleIRIMapper;
  * A class to load OWL ontologies from files or IRIs with optional local IRI mappings
  */
 public class OntologyLoader {
+    /**
+     * Loads an ontology from the specified file or IRI with default options
+     * @param ontologyFileOrIRI The file path or IRI of the ontology
+     * @return an instance of LoadedOntology containing the loaded ontology, its manager, and data factory
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public LoadedOntology load(String ontologyFileOrIRI) throws OWLOntologyCreationException {
+        return load(ontologyFileOrIRI, OWLManager.createOWLOntologyManager(), getDefaultLoadOptions());
+    }
+
+    /**
+     * Loads an ontology from the specified file or IRI with specified options
+     * @param ontologyFileOrIRI The file path or IRI of the ontology
+     * @param options The ontology load options
+     * @return an instance of LoadedOntology containing the loaded ontology, its manager, and data factory
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public LoadedOntology load(String ontologyFileOrIRI, OntologyLoadOptions options) throws OWLOntologyCreationException {
+        return load(ontologyFileOrIRI, OWLManager.createOWLOntologyManager(), options);
+    }
+
+    /**
+     * Loads an ontology from the specified file or IRI with default options and using the provided manager
+     * @param ontologyFileOrIRI The file path or IRI of the ontology
+     * @param manager A previously created OWL ontology manager
+     * @return an instance of LoadedOntology containing the loaded ontology, its manager, and data factory
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public LoadedOntology load(String ontologyFileOrIRI, OWLOntologyManager manager, OntologyLoadOptions options) throws OWLOntologyCreationException {
+        Objects.requireNonNull(ontologyFileOrIRI, "Ontology file/IRI must not be null");
+        boolean isURI = true;
+        try {
+            new java.net.URI(ontologyFileOrIRI);
+        } catch (Exception e) {
+            isURI = false;
+        }
+        OWLOntologyDocumentSource source;
+        if (isURI) {
+            source = new IRIDocumentSource(Objects.requireNonNull(IRI.create(ontologyFileOrIRI)));
+        }
+        else {
+            final Path path = Paths.get(ontologyFileOrIRI);
+            if (!Files.exists(path) || !Files.isRegularFile(path)) {
+                throw new OWLOntologyCreationException("The specified ontology file does not exist or is not a regular file: " + ontologyFileOrIRI);
+            }
+            source = new FileDocumentSource(Objects.requireNonNull(path.toFile()));
+        }
+        return load(source, manager, options);
+    }
 
     /**
      * Loads an ontology from the specified source with default options
@@ -65,6 +120,16 @@ public class OntologyLoader {
         addLocalIRIMappers(manager, options.getLocalMappings());
         final OWLDataFactory df = manager.getOWLDataFactory();
 
+        if (source.getDocumentIRI().toString().endsWith(".json") ||
+            source.getDocumentIRI().toString().endsWith(".jsonld") ||
+            source.getDocumentIRI().toString().endsWith(".json-ld")) {
+            final OWLOntology ontology = manager.loadOntologyFromOntologyDocument(
+                new FileDocumentSource(Objects.requireNonNull(new File(source.getDocumentIRI().toURI()), "Ontology file must not be null"), 
+                new RDFJsonLDDocumentFormat()), 
+				Objects.requireNonNull(options.getOwlConfig())
+            );
+            return new LoadedOntology(ontology, manager, df);
+        }
         final OWLOntology ontology = manager.loadOntologyFromOntologyDocument(source, Objects.requireNonNull(options.getOwlConfig()));
         return new LoadedOntology(ontology, manager, df);
     }

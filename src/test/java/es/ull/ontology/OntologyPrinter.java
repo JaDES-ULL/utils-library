@@ -11,10 +11,12 @@ import org.semanticweb.owlapi.io.IRIDocumentSource;
 import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyLoaderConfiguration;
 import org.semanticweb.owlapi.model.parameters.Imports;
 
 import es.ull.simulation.ontology.LoadedOntology;
 import es.ull.simulation.ontology.OWLOntologyWrapper;
+import es.ull.simulation.ontology.OntologyLoadOptions;
 import es.ull.simulation.ontology.OntologyLoader;
 
 public class OntologyPrinter {
@@ -56,7 +58,11 @@ public class OntologyPrinter {
 				}
 				source = new FileDocumentSource(Objects.requireNonNull(path.toFile()));
 			}
-			final LoadedOntology loadedOntology = loader.load(source);
+            final OWLOntologyLoaderConfiguration cfg = Objects.requireNonNull(new OWLOntologyLoaderConfiguration().setRepairIllegalPunnings(false)); 
+            final OntologyLoadOptions options = new OntologyLoadOptions.Builder()
+                    .owlConfig(cfg)
+                    .build();
+			final LoadedOntology loadedOntology = loader.load(source, options);
 			wrapper = new OWLOntologyWrapper(loadedOntology);
 			switch (mode) {
 				case 1:

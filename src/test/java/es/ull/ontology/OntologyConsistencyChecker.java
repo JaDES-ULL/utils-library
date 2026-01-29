@@ -1,9 +1,5 @@
 package es.ull.ontology;
 
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,13 +9,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.semanticweb.owlapi.io.FileDocumentSource;
-import org.semanticweb.owlapi.io.IRIDocumentSource;
-import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLDataPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLNamedIndividual;
+import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyLoaderConfiguration;
@@ -39,18 +35,13 @@ public class OntologyConsistencyChecker {
         CLASS,
         INDIVIDUAL
     }
+    public record CheckResult(int missingClasses, int misusedProperties, List<String> issues) {}
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(OntologyConsistencyChecker.class);
     private final OWLOntologyWrapper refWrapper;
-    private final OWLOntologyWrapper checkedWrapper;
     private final Map<IRI, EntityType> refEntityTypes = new HashMap<>();
-    private final List<String> issues = new ArrayList<>();
-    private int missingClasses = 0;
-    private int missingProperties = 0;
-    private int misusedProperties = 0;
 
-    private OntologyConsistencyChecker(OWLOntologyWrapper refWrapper, OWLOntologyWrapper checkedWrapper) {
+    public OntologyConsistencyChecker(OWLOntologyWrapper refWrapper) {
         this.refWrapper = refWrapper;
-        this.checkedWrapper = checkedWrapper;
         fillEntityTypes();
     }
 
@@ -83,38 +74,94 @@ public class OntologyConsistencyChecker {
         }
     }
 
-    public List<String> getIssues() {
-        return List.copyOf(issues);
-    }
-
-    public int getMissingClassesCount() {
-        return missingClasses;
-    }
-    
-    public int getMissingPropertiesCount() {
-        return missingProperties;
-    }
-    
-    public int getMisusedPropertiesCount() {
-        return misusedProperties;
-    }
-
-    private void check() {
+    private int[] check(OWLOntologyWrapper checkedWrapper, List<String> issues) {
+        int[] results = new int[2];
         LOGGER.info("Checking ontology consistency between reference and checked ontologies.");
-        checkClasses();
-        checkProperties();
+        results[0] = checkClasses(checkedWrapper, issues);
+        results[1] = countWrongProperties(checkedWrapper, issues);
+        return results;
     }
 
-    private void checkProperties() {
-        for (OWLAxiom ax : checkedWrapper.getOntology().getAxioms()) {
-
-            if (ax instanceof OWLAnnotationAssertionAxiom) {
-                OWLAnnotationAssertionAxiom ann = (OWLAnnotationAssertionAxiom) ax;
-
-                IRI propIri = ann.getProperty().getIRI();
-                if (propIri.toString().contains("Freq")) {
-                    LOGGER.info("Debug Freq property found: {}", ann);
+    public int countWrongAnnotationsForIndividual(OWLOntologyWrapper checkedWrapper, IRI individualIRI, List<String> issues) {
+        Objects.requireNonNull(individualIRI, "individualIRI must not be null");
+        int errors = 0;
+        for (OWLAnnotationAssertionAxiom ax : checkedWrapper.getOntology().getAnnotationAssertionAxioms(individualIRI)) {
+            if (ax.getSubject().isIRI() && ax.getSubject().asIRI().get().equals(individualIRI)) {
+                final IRI propIri = ax.getProperty().getIRI();                
+                final EntityType refType = refEntityTypes.get(propIri);
+                if (refType != EntityType.ANNOTATION) {
+                    issues.add("MISUSED PROPERTY IN ASSERTION: property " + propIri + " used in annotation for individual " + individualIRI + " should be an annotation property.");
+                    errors++;
                 }
+            }
+        }
+        return errors;
+    }
+
+    public int countWrongObjectPropertiesForIndividual(OWLOntologyWrapper checkedWrapper, IRI individualIRI, List<String> issues) {
+        Objects.requireNonNull(individualIRI, "individualIRI must not be null");
+        int errors = 0;
+        OWLNamedIndividual individual = Objects.requireNonNull(checkedWrapper.asOWLIndividual(individualIRI));
+        final Set<OWLObjectPropertyAssertionAxiom> objProps = checkedWrapper.getOntology().getObjectPropertyAssertionAxioms(individual);
+        for (OWLObjectPropertyAssertionAxiom ax : objProps) {
+            final IRI propIri = ax.getProperty().asOWLObjectProperty().getIRI();                
+            final EntityType refType = refEntityTypes.get(propIri);
+            if (refType != EntityType.OBJECT_PROPERTY) {
+                issues.add("MISUSED PROPERTY IN ASSERTION: property " + propIri + " used for individual " + individualIRI + " should be an object property.");
+                errors++;
+            }
+            final IRI valueIRI = ax.getObject().asOWLNamedIndividual().getIRI();
+            if (!checkedWrapper.getIndividualsInSignature(Imports.INCLUDED).contains(valueIRI)) {
+                issues.add("INVALID OBJECT VALUE IN ASSERTION: value " + valueIRI + " of object property " + propIri + " is not an individual.");
+                errors++;
+            }            
+        }
+        return errors;
+    }
+
+    public int countWrongDataPropertiesForIndividual(OWLOntologyWrapper checkedWrapper, IRI individualIRI, List<String> issues) {
+        Objects.requireNonNull(individualIRI, "individualIRI must not be null");
+        int errors = 0;
+        OWLNamedIndividual individual = Objects.requireNonNull(checkedWrapper.asOWLIndividual(individualIRI));
+        final Set<OWLDataPropertyAssertionAxiom> dataProps = checkedWrapper.getOntology().getDataPropertyAssertionAxioms(individual);
+        for (OWLDataPropertyAssertionAxiom ax : dataProps) {
+            final IRI propIri = ax.getProperty().asOWLDataProperty().getIRI();                
+            final EntityType refType = refEntityTypes.get(propIri);
+            if (refType != EntityType.DATA_PROPERTY) {
+                issues.add("MISUSED PROPERTY IN ASSERTION: property " + propIri + " used for individual " + individualIRI + " should be a data property.");
+                errors++;
+            }          
+        }
+        return errors;
+    }
+
+    public int countWrongTypesForIndividual(OWLOntologyWrapper checkedWrapper, IRI individualIRI, List<String> issues) {
+        Objects.requireNonNull(individualIRI, "individualIRI must not be null");
+        int errors = 0;
+        Set<IRI> assertedClasses = checkedWrapper.getAssertedTypes(individualIRI, false, Imports.EXCLUDED);
+        for (IRI classIRI : assertedClasses) {
+            final EntityType refType = refEntityTypes.get(classIRI);
+            if (refType != EntityType.CLASS) {
+                issues.add("MISUSED TYPE IN ASSERTION: type " + classIRI + " asserted for individual " + individualIRI + " should be a class.");
+                errors++;
+            }
+        }
+        return errors;
+    }
+
+    public boolean checkEmptyTypeForIndividual(OWLOntologyWrapper checkedWrapper, IRI individualIRI, List<String> issues) {
+        Objects.requireNonNull(individualIRI, "individualIRI must not be null");
+        Set<IRI> assertedClasses = checkedWrapper.getAssertedTypes(individualIRI, false, Imports.EXCLUDED);
+        return assertedClasses.isEmpty();
+    }
+
+    private int countWrongProperties(OWLOntologyWrapper checkedWrapper, List<String> issues) {
+        int misusedProperties = 0;
+        for (OWLAxiom ax : checkedWrapper.getOntology().getAxioms()) {
+            if (ax instanceof OWLAnnotationAssertionAxiom) {
+                final OWLAnnotationAssertionAxiom ann = (OWLAnnotationAssertionAxiom) ax;
+
+                final IRI propIri = ann.getProperty().getIRI();
                 boolean declaredAsAnnotation = checkedWrapper.getOntology()
                                 .annotationPropertiesInSignature()
                                 .anyMatch(p -> p.getIRI().equals(propIri));
@@ -125,9 +172,9 @@ public class OntologyConsistencyChecker {
                                 .dataPropertiesInSignature()
                                 .anyMatch(p -> p.getIRI().equals(propIri));
                 
-                EntityType refType = refEntityTypes.get(propIri);
+                final EntityType refType = refEntityTypes.get(propIri);
                 if (refType == null) {
-                    missingProperties++;
+                    misusedProperties++;
                     issues.add("Property " + propIri + " in checked ontology is not present in reference ontology.");
                 }
                 else {
@@ -166,11 +213,22 @@ public class OntologyConsistencyChecker {
                             break;
                     }
                 }
+                if (ann.getValue().isIRI()) { 
+                    final IRI valueIRI = ann.getValue().asIRI().get();
+                    if (refEntityTypes.containsKey(valueIRI)) {
+                        final EntityType valueRefType = refEntityTypes.get(valueIRI);
+                        if (valueRefType != EntityType.CLASS && valueRefType != EntityType.INDIVIDUAL) {
+                            issues.add("MISUSED VALUE IN ASSERTION: value " + valueIRI + " of annotation property " + propIri + " should be a class or individual.");
+                            misusedProperties++;
+                        }
+                    }
+                }
             }
         }
+        return misusedProperties;
     }
 
-    private void checkClasses() {
+    private int checkClasses(OWLOntologyWrapper checkedWrapper, List<String> issues) {
         Set<IRI> refClasses = refWrapper.getClassesInSignature(Imports.INCLUDED);
         Set<IRI> checkedClasses = checkedWrapper.getClassesInSignature(Imports.INCLUDED);
         Set<IRI> notPresentClasses = new HashSet<>(checkedClasses);
@@ -178,76 +236,7 @@ public class OntologyConsistencyChecker {
         for (IRI notPresentClass : notPresentClasses) {
             issues.add("Class " + notPresentClass + " in checked ontology is not present in reference ontology.");
         }
-        missingClasses = notPresentClasses.size();
-    }
-
-    private static OWLOntologyWrapper loadReferenceOntology(String refOntologyFileOrIRI) {
-        Objects.requireNonNull(refOntologyFileOrIRI, "Reference ontology file/IRI must not be null");
-        boolean isURI = true;
-        OWLOntologyWrapper wrapper = null;
-        try {
-            new URI(refOntologyFileOrIRI);
-        } catch (Exception e) {
-            isURI = false;
-        }
-        
-        try {
-            OntologyLoader loader = new OntologyLoader();
-            OWLOntologyDocumentSource source;
-            if (isURI) {
-                source = new IRIDocumentSource(Objects.requireNonNull(IRI.create(refOntologyFileOrIRI)));
-            }
-            else {
-                final Path path = Paths.get(refOntologyFileOrIRI);
-                if (!Files.exists(path) || !Files.isRegularFile(path)) {
-                    System.err.println("The specified ontology file does not exist or is not a regular file: " + refOntologyFileOrIRI);
-                    return null;
-                }
-                source = new FileDocumentSource(Objects.requireNonNull(path.toFile()));
-            }
-            final LoadedOntology loadedOntology = loader.load(source);
-            wrapper = new OWLOntologyWrapper(loadedOntology);
-        } catch (OWLOntologyCreationException e) {
-            e.printStackTrace();
-        }
-        return wrapper;
-    }
-
-    private static OWLOntologyWrapper loadCheckedOntology(String checkedOntologyFileOrIRI) {
-        Objects.requireNonNull(checkedOntologyFileOrIRI, "Checked ontology file/IRI must not be null");
-        boolean isURI = true;
-        OWLOntologyWrapper wrapper = null;
-        try {
-            new URI(checkedOntologyFileOrIRI);
-        } catch (Exception e) {
-            isURI = false;
-        }
-        
-         try {
-            OntologyLoader loader = new OntologyLoader();
-            OWLOntologyDocumentSource source;
-            if (isURI) {
-                source = new IRIDocumentSource(Objects.requireNonNull(IRI.create(checkedOntologyFileOrIRI)));
-            }
-            else {
-                final Path path = Paths.get(checkedOntologyFileOrIRI);
-                if (!Files.exists(path) || !Files.isRegularFile(path)) {
-                    System.err.println("The specified ontology file does not exist or is not a regular file: " + checkedOntologyFileOrIRI);
-                    return null;
-                }
-                source = new FileDocumentSource(Objects.requireNonNull(path.toFile()));
-            }
-            final OWLOntologyLoaderConfiguration cfg = Objects.requireNonNull(new OWLOntologyLoaderConfiguration().setRepairIllegalPunnings(false)); 
-            final OntologyLoadOptions options = new OntologyLoadOptions.Builder()
-                    .owlConfig(cfg)
-                    .build();
-
-            final LoadedOntology loadedOntology = loader.load(source, options);
-            wrapper = new OWLOntologyWrapper(loadedOntology);
-        } catch (OWLOntologyCreationException e) {
-            e.printStackTrace();
-        }
-        return wrapper;
+        return notPresentClasses.size();
     }
     
 	public static void main(String[] args) {
@@ -257,10 +246,27 @@ public class OntologyConsistencyChecker {
 		}
 		String refOntologyFileOrIRI = Objects.requireNonNull(args[0], "Ontology file/IRI must not be null");
 		String checkedOntologyFileOrIRI = Objects.requireNonNull(args[1], "Checked ontology file/IRI must not be null");
-        OWLOntologyWrapper refWrapper = loadReferenceOntology(refOntologyFileOrIRI);
-        OWLOntologyWrapper checkedWrapper = loadCheckedOntology(checkedOntologyFileOrIRI);
-        checkedWrapper.getDebugPrinter().printTabulatedIndividuals(Imports.EXCLUDED);
-        OntologyConsistencyChecker checker = new OntologyConsistencyChecker(refWrapper, checkedWrapper);
-        checker.check();
+        OntologyLoader loader = new OntologyLoader();
+        try {
+            final LoadedOntology loadedRefOntology = loader.load(refOntologyFileOrIRI);
+            OWLOntologyWrapper refWrapper = new OWLOntologyWrapper(loadedRefOntology);
+            final OWLOntologyLoaderConfiguration cfg = Objects.requireNonNull(new OWLOntologyLoaderConfiguration().setRepairIllegalPunnings(false)); 
+            final OntologyLoadOptions options = new OntologyLoadOptions.Builder()
+                    .owlConfig(cfg)
+                    .build();
+            final LoadedOntology loadedCheckOntology = loader.load(checkedOntologyFileOrIRI, options);
+            OWLOntologyWrapper checkedWrapper = new OWLOntologyWrapper(loadedCheckOntology);
+            checkedWrapper.getDebugPrinter().printTabulatedIndividuals(Imports.EXCLUDED);
+            OntologyConsistencyChecker checker = new OntologyConsistencyChecker(refWrapper);
+            List<String> issues = new ArrayList<>();
+            int[] errors = checker.check(checkedWrapper, issues);
+            System.out.println("Number of missing classes: " +  errors[0]);
+            System.out.println("Number of misused properties: " +  errors[1]);
+            for (String issue : issues) {
+                System.out.println(issue);
+            }
+        } catch (OWLOntologyCreationException e) {
+            e.printStackTrace();
+        }
 	}
 }
