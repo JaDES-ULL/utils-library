@@ -1,11 +1,11 @@
 package es.ull.simulation.ontology;
 
 import java.io.File;
-import java.io.InputStream;
-import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -19,52 +19,71 @@ import org.semanticweb.owlapi.util.SimpleIRIMapper;
 public class OntologyLoader {
 
     /**
-     * Loads an ontology from the specified source with optional local IRI mappings
+     * Loads an ontology from the specified source with default options
      * @param source The source of the ontology
-     * @param localMappings The local mappings in the form IRI=localPath
      * @return an instance of LoadedOntology containing the loaded ontology, its manager, and data factory
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
-    public LoadedOntology load(OntologySource source, String... localMappings) throws OWLOntologyCreationException {
-        return load(source, OWLManager.createOWLOntologyManager(), localMappings);
+    public LoadedOntology load(OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
+        return load(source, OWLManager.createOWLOntologyManager(), getDefaultLoadOptions());
     }
 
     /**
-     * Loads an ontology from the specified source with optional local IRI mappings and using the provided manager
+     * Loads an ontology from the specified source with specified options
      * @param source The source of the ontology
-     * @param manager A previously created OWL ontology manager
-     * @param localMappings The local mappings in the form IRI=localPath
+     * @param options The ontology load options
      * @return an instance of LoadedOntology containing the loaded ontology, its manager, and data factory
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
-    public LoadedOntology load(OntologySource source, OWLOntologyManager manager, String... localMappings) throws OWLOntologyCreationException {
-        addLocalIRIMappers(manager, localMappings);
+    public LoadedOntology load(OWLOntologyDocumentSource source, OntologyLoadOptions options) throws OWLOntologyCreationException {
+        return load(source, OWLManager.createOWLOntologyManager(), options);
+    }
+
+    /**
+     * Loads an ontology from the specified source with default options and using the provided manager
+     * @param source The source of the ontology
+     * @param manager A previously created OWL ontology manager
+     * @return an instance of LoadedOntology containing the loaded ontology, its manager, and data factory
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public LoadedOntology load(OWLOntologyDocumentSource source, OWLOntologyManager manager) throws OWLOntologyCreationException {
+        return load(source, manager, getDefaultLoadOptions());
+    }
+
+    /**
+     * Loads an ontology from the specified source with specified options and using the provided manager
+     * @param source The source of the ontology
+     * @param manager A previously created OWL ontology manager
+     * @param options The ontology load options
+     * @return an instance of LoadedOntology containing the loaded ontology, its manager, and data factory
+     * @throws OWLOntologyCreationException if there is an error loading the ontology
+     */
+    public LoadedOntology load(OWLOntologyDocumentSource source, OWLOntologyManager manager, OntologyLoadOptions options) throws OWLOntologyCreationException {
+        Objects.requireNonNull(source, "Ontology source should never be null");
+        Objects.requireNonNull(manager, "Ontology manager should never be null");
+        Objects.requireNonNull(options, "Ontology load options should never be null");
+        addLocalIRIMappers(manager, options.getLocalMappings());
         final OWLDataFactory df = manager.getOWLDataFactory();
 
-        final OWLOntology ontology;
-        if (source instanceof OntologySource.FromPath p) {
-            final Path path = Objects.requireNonNull(p.path(), "Path should never be null");
-            final File file = Objects.requireNonNull(path.toFile(), "File should never be null");
-            ontology = manager.loadOntologyFromOntologyDocument(file);
-        } else if (source instanceof OntologySource.FromIRI i) {
-            final IRI iri = Objects.requireNonNull(i.iri(), "IRI should never be null");
-            ontology = manager.loadOntology(iri);
-        } else if (source instanceof OntologySource.FromStream s) {
-            final InputStream inputStream = Objects.requireNonNull(s.inputStream(), "InputStream should never be null");
-            ontology = manager.loadOntologyFromOntologyDocument(inputStream);
-        } else {
-            throw new IllegalArgumentException("Unsupported source: " + source);
-        }
+        final OWLOntology ontology = manager.loadOntologyFromOntologyDocument(source, Objects.requireNonNull(options.getOwlConfig()));
         return new LoadedOntology(ontology, manager, df);
     }
 
+    /**
+     * Gets the default ontology load options
+     * @return the default OntologyLoadOptions
+     */
+    private OntologyLoadOptions getDefaultLoadOptions() {
+        return OntologyLoadOptions.defaults();
+    }
+    
 	/**
 	 * Adds a set of local path mappings for IRIs to the ontology manager. It is static so it can be used before loading ontologies.
 	 * @param manager The OWL ontology manager
-     * @param localMappings The local mappings in the form IRI=localPath
+     * @param localMappings A list of local mappings in the form IRI=localPath
 	 */
-	public static void addLocalIRIMappers(OWLOntologyManager manager, String... localMappings) {
-		if (localMappings.length > 0) {
+	public static void addLocalIRIMappers(OWLOntologyManager manager, List<String> localMappings) {
+		if (localMappings.size() > 0) {
 			for (String mapping : localMappings) {
 				String[] parts = mapping.split("=");
 				if (parts.length == 2) {

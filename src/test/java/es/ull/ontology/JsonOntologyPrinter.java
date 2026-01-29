@@ -40,7 +40,7 @@ public class JsonOntologyPrinter {
                 new FileDocumentSource(Objects.requireNonNull(path.toFile(), "Ontology file must not be null"), new RDFJsonLDDocumentFormat())
             );
             LoadedOntology loadedOntology = new LoadedOntology(ontology, manager, manager.getOWLDataFactory());
-			wrapper = new OWLOntologyWrapper(loadedOntology, true);
+			wrapper = new OWLOntologyWrapper(loadedOntology);
 			wrapper.getDebugPrinter().printTabulatedIndividuals(Imports.INCLUDED);
 		} catch (OWLOntologyCreationException e) {
 			e.printStackTrace();

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAnnotationValue;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.parameters.Imports;
@@ -175,6 +176,11 @@ public final class OntologyDebugPrinter {
             for (Map.Entry<IRI, Set<OWLLiteral>> entry : dataProps.entrySet())
                 for (OWLLiteral value : entry.getValue())
                     out.print("#" + entry.getKey().getShortForm() + ": " + value.getLiteral() + "; ");
+            out.print("\t");
+            Map<IRI, Set<OWLAnnotationValue>> annotations = individualQuery.getAllAnnotationValues(individual, imports);
+            for (Map.Entry<IRI, Set<OWLAnnotationValue>> entry : annotations.entrySet())
+                for (OWLAnnotationValue value : entry.getValue())
+                    out.print("#" + entry.getKey().getShortForm() + ": " + value.toString() + "; ");
             out.println();
 		}
 	}

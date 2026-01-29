@@ -7,8 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.semanticweb.owlapi.io.IRIDocumentSource;
+import org.semanticweb.owlapi.io.StreamDocumentSource;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.semanticweb.owlapi.profiles.OWL2DLProfile;
 import org.semanticweb.owlapi.util.SimpleIRIMapper;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
 import org.slf4j.Logger;
@@ -17,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import es.ull.simulation.ontology.LoadedOntology;
 import es.ull.simulation.ontology.OntologyLoader;
 import es.ull.simulation.ontology.OWLOntologyWrapper;
-import es.ull.simulation.ontology.OntologySource;
+import es.ull.simulation.ontology.OntologyLoadOptions;
 import es.ull.simulation.ontology.OWLOntologyWrapper.InstanceCheckMode;
 
 import java.io.File;
@@ -65,8 +68,11 @@ public class OntologyTest {
         try {
             final File tmp = File.createTempFile("schema", ".owl");
             tmp.deleteOnExit();
-            Files.copy(getClass().getResourceAsStream(SCHEMA_FILE), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)), SCHEMA_IRI + "=" + tmp.getAbsolutePath()); 
+            Files.copy(Objects.requireNonNull(getClass().getResourceAsStream(SCHEMA_FILE)), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            final OntologyLoadOptions options = new OntologyLoadOptions.Builder()
+                    .addLocalMapping(SCHEMA_IRI + "=" + tmp.getAbsolutePath())
+                    .build();
+            final LoadedOntology loaded = loader.load(new StreamDocumentSource(Objects.requireNonNull(getClass().getResourceAsStream(DATA_FILE))), options); 
             final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
             log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
             return ontologyWrapper;
@@ -77,8 +83,8 @@ public class OntologyTest {
 
     @Test
     public void testOntologyLoading() throws OWLOntologyCreationException {
-        final InputStream schemaStream = getClass().getResourceAsStream(SCHEMA_FILE);
-        final LoadedOntology loaded = loader.load(new OntologySource.FromStream(schemaStream));
+        final InputStream schemaStream = Objects.requireNonNull(getClass().getResourceAsStream(SCHEMA_FILE));
+        final LoadedOntology loaded = loader.load(new StreamDocumentSource(schemaStream));
         final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         assertEquals(SCHEMA_IRI, ontologyWrapper.getOntology().getOntologyID().getOntologyIRI().get().toString());
         log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
@@ -86,7 +92,7 @@ public class OntologyTest {
 
     @Test
     public void testRemoteOntologyLoading() throws OWLOntologyCreationException {
-        final LoadedOntology loaded = loader.load(new OntologySource.FromIRI(IRI.create(REMOTE_ONTOLOGY_VERSIONED_IRI)));
+        final LoadedOntology loaded = loader.load(new IRIDocumentSource(Objects.requireNonNull(IRI.create(REMOTE_ONTOLOGY_VERSIONED_IRI))));
         final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         final String loadedOntologyIRI = ontologyWrapper.getOntology().getOntologyID().getOntologyIRI().get().getIRIString().trim();
         assertEquals(REMOTE_ONTOLOGY_IRI, loadedOntologyIRI, "Loaded ontology IRI (" + loadedOntologyIRI + ") and remote ontology IRI (" + REMOTE_ONTOLOGY_IRI + ") should match");
@@ -95,7 +101,7 @@ public class OntologyTest {
 
     @Test
     public void testRemoteIndividualsLoading() throws OWLOntologyCreationException {
-        final LoadedOntology loaded = loader.load(new OntologySource.FromIRI(IRI.create(REMOTE_INDIVIDUALS_VERSIONED_IRI)));
+        final LoadedOntology loaded = loader.load(new IRIDocumentSource(Objects.requireNonNull(IRI.create(REMOTE_INDIVIDUALS_VERSIONED_IRI))));
         final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loaded);
         final IRI classDiseaseIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
         final IRI individualDiseaseIRI = ontologyWrapper.toIRI(REMOTE_TEST_DISEASE_INDIVIDUAL);
@@ -320,7 +326,7 @@ public class OntologyTest {
 
     @Test
     public void testOntologyDoubleLoading() throws OWLOntologyCreationException {
-        final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(SCHEMA_FILE)));
+        final LoadedOntology loaded = loader.load(new StreamDocumentSource(Objects.requireNonNull(getClass().getResourceAsStream(SCHEMA_FILE))));
         final URL url = Objects.requireNonNull(getClass().getResource(SCHEMA_FILE));
         final IRI localSchemaFileIRI = Objects.requireNonNull(IRI.create(url));
         log.debug("Schema file IRI: " + localSchemaFileIRI);
@@ -328,11 +334,11 @@ public class OntologyTest {
         SimpleIRIMapper mapper = new SimpleIRIMapper(schemaFileVersionIRI, localSchemaFileIRI);
         loaded.manager().getIRIMappers().add(mapper);
 
-        final LoadedOntology loadedWithMapping = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)), loaded.manager());
+        final LoadedOntology loadedWithMapping = loader.load(new StreamDocumentSource(Objects.requireNonNull(getClass().getResourceAsStream(DATA_FILE))), loaded.manager());
         final OWLOntologyWrapper ontologyWrapper = new OWLOntologyWrapper(loadedWithMapping);
         log.debug("Ontology loaded: " + ontologyWrapper.getOntology().getOntologyID());
         
-        final OWLOntology mergedOntology = ontologyWrapper.loadOntology(new OntologySource.FromStream(getClass().getResourceAsStream(DATA_FILE)));
+        final OWLOntology mergedOntology = ontologyWrapper.loadOntology(new StreamDocumentSource(Objects.requireNonNull(getClass().getResourceAsStream(DATA_FILE))));
         log.debug("Another ontology loaded. New ontology: " + mergedOntology.getOntologyID());
         // Show individuals in the merged ontology
         mergedOntology.individualsInSignature().forEach(ind -> log.debug(" - " + ind));
@@ -350,8 +356,8 @@ public class OntologyTest {
     @Test
     public void testNonCompliantOntology() throws OWLOntologyCreationException {
         assertThrows(OWLOntologyCreationException.class, () -> {
-            final LoadedOntology loaded = loader.load(new OntologySource.FromStream(getClass().getResourceAsStream(WRONG_DATA_FILE)));
-            new OWLOntologyWrapper(loaded);
+            final LoadedOntology loaded = loader.load(new StreamDocumentSource(Objects.requireNonNull(getClass().getResourceAsStream(WRONG_DATA_FILE))));
+            new OWLOntologyWrapper(loaded, new OWL2DLProfile());
         }, "Loading " + WRONG_DATA_FILE + ", which is a non-compliant ontology, should throw exception");
     }
 }

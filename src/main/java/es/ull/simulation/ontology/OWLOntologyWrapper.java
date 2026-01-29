@@ -7,7 +7,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLClass;
@@ -23,7 +25,6 @@ import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.PrefixManager;
 import org.semanticweb.owlapi.model.parameters.Imports;
-import org.semanticweb.owlapi.profiles.OWL2DLProfile;
 import org.semanticweb.owlapi.profiles.OWLProfile;
 import org.semanticweb.owlapi.profiles.OWLProfileReport;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
@@ -80,20 +81,26 @@ public class OWLOntologyWrapper {
 	private final OntologyDebugPrinter debugPrinter;
 
 	/**
-	 * Creates a wrapper for the specified ontology that must be checked against OWL 2 DL profile
-	 * @param ontology The OWL ontology
-	 * @throws OWLOntologyCreationException
+	 * Creates a wrapper for the specified ontology and checks it against the specified profile
+	 * @param loaded The loaded ontology
+	 * @param profileToCheck The profile to check against
+	 * @throws OWLOntologyCreationException If the ontology does not comply with the specified profile
 	 */
-	public OWLOntologyWrapper(LoadedOntology loaded) throws OWLOntologyCreationException {
-		this(loaded, false);
+	public OWLOntologyWrapper(LoadedOntology loaded, OWLProfile profileToCheck) throws OWLOntologyCreationException {
+		this(loaded);
+		Objects.requireNonNull(profileToCheck, "profileToCheck should never be null");
+        final OWLProfileReport report = profileToCheck.checkOntology(Objects.requireNonNull(loaded.ontology(), "OWL Ontology should never be null"));
+		if (!report.isInProfile()) {
+			throw new OWLOntologyCreationException(
+				"Ontology does NOT comply with profile " + profileToCheck.getName() + ". Violations: " + report);
+		}
 	}
 
 	/**
-	 * Creates a wrapper for the specified ontology and optionally skips the check against OWL 2 DL profile
+	 * Creates a wrapper for the specified ontology
 	 * @param ontology The OWL ontology
-	 * @throws OWLOntologyCreationException
 	 */
-	public OWLOntologyWrapper(LoadedOntology loaded, boolean unchecked) throws OWLOntologyCreationException {
+	public OWLOntologyWrapper(LoadedOntology loaded) {
 		final OWLOntology ont = Objects.requireNonNull(loaded.ontology(), "OWL Ontology should never be null");
 		final OWLOntologyManager manager = Objects.requireNonNull(loaded.manager(), "OWLOntologyManager should never be null");
 		final PrefixManager pm = buildPrefixManagerFromOntologyFormat(manager, ont);
@@ -102,8 +109,6 @@ public class OWLOntologyWrapper {
 		this.ctx = new OntologyContext(loaded, pm, rf);
 		this.ontologyIO = new OntologyIO(ctx);
 		this.ontologyResolution = new OntologyResolution(ctx);
-		if (!unchecked)
-			checkProfile(ont);
 		this.individualAuthoring = new IndividualAuthoring(ctx);
 		this.individualQuery = new IndividualQuery(ctx);
 		this.reasonedQuery = new ReasonedQuery(ctx);
@@ -217,7 +222,7 @@ public class OWLOntologyWrapper {
 	 * @return The loaded ontology
 	 * @throws OWLOntologyCreationException 
 	 */
-	public OWLOntology loadOntology(final OntologySource source) throws OWLOntologyCreationException {
+	public OWLOntology loadOntology(final OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
 		return ontologyIO.loadOntology(source);
 	}
 
@@ -629,19 +634,4 @@ public class OWLOntologyWrapper {
 	public Optional<String> getLabelForIRI(IRI elementIRI, String lang) {
 		return this.individualQuery.getLabelForIRI(elementIRI, lang);
 	}
-
-	/**
-	 * Checks if the ontology complies with the OWL 2 DL profile.
-	 * @param ontology The ontology to be checked
-	 * @throws OWLOntologyCreationException if the ontology does not comply with the OWL 2 DL profile
-	 */
-    public void checkProfile(OWLOntology ontology) throws OWLOntologyCreationException {
-		Objects.requireNonNull(ontology, "ontology must not be null");
-        final OWLProfile profile = new OWL2DLProfile(); // o el perfil que te interese
-        final OWLProfileReport report = profile.checkOntology(ontology);
-
-        if (!report.isInProfile()) {
-            throw new OWLOntologyCreationException("Ontology does NOT comply with OWL 2 DL. Violations: " + report.getViolations().toString());
-        } 
-    }
 }

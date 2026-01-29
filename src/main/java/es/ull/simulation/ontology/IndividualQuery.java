@@ -457,7 +457,6 @@ public final class IndividualQuery {
     public Map<IRI, Set<IRI>> getAllObjectPropertyValues(final IRI subjectIri, final Imports imports) {
         Objects.requireNonNull(subjectIri, "subjectIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
-
         final Map<IRI, Set<IRI>> result = new LinkedHashMap<>();
 
         if (!ctx.getOntology().containsIndividualInSignature(subjectIri, imports)) {
@@ -470,7 +469,6 @@ public final class IndividualQuery {
             collectAllObjectPropertyValuesFromOntology(ctx.getOntology(), subj, result);
             return result;
         }
-
         for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
             collectAllObjectPropertyValuesFromOntology(o, subj, result);
         }
@@ -507,7 +505,6 @@ public final class IndividualQuery {
     public Map<IRI, Set<OWLLiteral>> getAllDataPropertyValues(final IRI subjectIri, final Imports imports) {
         Objects.requireNonNull(subjectIri, "subjectIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
-
         final Map<IRI, Set<OWLLiteral>> result = new LinkedHashMap<>();
 
         if (!ctx.getOntology().containsIndividualInSignature(subjectIri, imports)) {
@@ -520,7 +517,6 @@ public final class IndividualQuery {
             collectAllDataPropertyValuesFromOntology(ctx.getOntology(), subj, result);
             return result;
         }
-
         for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
             Objects.requireNonNull(o, "ontology in imports closure must not be null");
             collectAllDataPropertyValuesFromOntology(o, subj, result);
@@ -546,6 +542,52 @@ public final class IndividualQuery {
         }
     }
 
+    /**
+     * Returns all asserted annotation values for an individual, grouped by annotation property.
+     *
+     * @param subjectIri The IRI of the subject individual
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return A map from annotation property IRIs to sets of annotation values
+     */
+    public Map<IRI, Set<OWLAnnotationValue>> getAllAnnotationValues(final IRI subjectIri, final Imports imports) {
+        Objects.requireNonNull(subjectIri, "subjectIri must not be null");
+        Objects.requireNonNull(imports, "imports must not be null");
+        final Map<IRI, Set<OWLAnnotationValue>> result = new LinkedHashMap<>();
+
+        if (!ctx.getOntology().containsIndividualInSignature(subjectIri, imports)) {
+            return result;
+        }
+        final OWLNamedIndividual subj = ctx.getFactory().getOWLNamedIndividual(subjectIri);
+
+        if (imports == Imports.EXCLUDED) {
+            collectAllAnnotationValuesFromOntology(ctx.getOntology(), subj, result);
+            return result;
+        }
+        for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
+            collectAllAnnotationValuesFromOntology(o, subj, result);
+        }
+        return result;
+    }
+
+    /**
+     * Helper method to collect all annotation property values from a given ontology
+     * for a subject individual (as annotation subject).
+     *
+     * @param ontology the ontology to query
+     * @param subj the subject individual whose annotations are to be collected
+     * @param out the output map to populate with annotation property IRIs and their corresponding values
+     */
+    private static void collectAllAnnotationValuesFromOntology(final OWLOntology ontology, final OWLNamedIndividual subj, final Map<IRI, Set<OWLAnnotationValue>> out) {
+        Objects.requireNonNull(ontology, "ontology must not be null");
+        Objects.requireNonNull(subj, "subj must not be null");
+        Objects.requireNonNull(out, "out must not be null");
+        final IRI subjectIri = Objects.requireNonNull(subj.getIRI(), "subjectIri must not be null");
+        for (OWLAnnotationAssertionAxiom ax : ontology.getAnnotationAssertionAxioms(subjectIri)) {
+            final OWLAnnotationProperty prop = ax.getProperty();
+            final OWLAnnotationValue value = ax.getValue();
+            out.computeIfAbsent(prop.getIRI(), k -> new LinkedHashSet<>()).add(value);
+        }
+    }
 
 	/**
 	 * Returns the label (rdfs:label) of an ontology element in a specific language, if available.

@@ -2,6 +2,7 @@ package es.ull.simulation.ontology;
 
 import java.util.Objects;
 
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
@@ -25,11 +26,11 @@ public class OntologyIO {
 
 	/**
 	 * Loads another ontology from the specified source and makes it available in the manager
-	 * @param iri The IRI of the new ontology
+	 * @param source The source of the new ontology
 	 * @return The loaded ontology
 	 * @throws OWLOntologyCreationException 
 	 */
-	public OWLOntology loadOntology(final OntologySource source) throws OWLOntologyCreationException {
+	public OWLOntology loadOntology(final OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
 		Objects.requireNonNull(source, "source must not be null");
 		final OWLOntology ontology = internalLoader.load(source, ctx.getManager()).ontology();
         ctx.markDirty();

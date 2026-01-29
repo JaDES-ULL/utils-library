@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
+import org.semanticweb.owlapi.io.FileDocumentSource;
+import org.semanticweb.owlapi.io.IRIDocumentSource;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.parameters.Imports;
@@ -13,7 +16,6 @@ import org.semanticweb.owlapi.model.parameters.Imports;
 import es.ull.simulation.ontology.LoadedOntology;
 import es.ull.simulation.ontology.OWLOntologyWrapper;
 import es.ull.simulation.ontology.OntologyLoader;
-import es.ull.simulation.ontology.OntologySource;
 
 public class OntologyPrinter {
 	public static void main(String[] args) {
@@ -42,9 +44,9 @@ public class OntologyPrinter {
 		
 		try {
 			OntologyLoader loader = new OntologyLoader();
-			OntologySource source;
+			OWLOntologyDocumentSource source;
 			if (isURI) {
-				source = new OntologySource.FromIRI(IRI.create(ontologyFileOrIRI));
+				source = new IRIDocumentSource(Objects.requireNonNull(IRI.create(ontologyFileOrIRI)));
 			}
 			else {
 				final Path path = Paths.get(ontologyFileOrIRI);
@@ -52,7 +54,7 @@ public class OntologyPrinter {
 					System.err.println("The specified ontology file does not exist or is not a regular file: " + ontologyFileOrIRI);
 					return;
 				}
-				source = new OntologySource.FromPath(path);
+				source = new FileDocumentSource(Objects.requireNonNull(path.toFile()));
 			}
 			final LoadedOntology loadedOntology = loader.load(source);
 			wrapper = new OWLOntologyWrapper(loadedOntology);
