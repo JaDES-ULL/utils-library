@@ -1,186 +1,151 @@
-/**
- * 
- */
 package es.ull.simulation.ontology;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
-import org.semanticweb.HermiT.Configuration;
-import org.semanticweb.HermiT.ReasonerFactory;
-import org.semanticweb.HermiT.Reasoner;
-import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.PrefixDocumentFormat;
-import org.semanticweb.owlapi.model.AddAxiom;
-import org.semanticweb.owlapi.model.AxiomType;
+import org.semanticweb.owlapi.io.OWLOntologyDocumentSource;
 import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLAnnotation;
-import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
-import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
-import org.semanticweb.owlapi.model.OWLDataMinCardinality;
 import org.semanticweb.owlapi.model.OWLDataProperty;
-import org.semanticweb.owlapi.model.OWLDataPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
-import org.semanticweb.owlapi.model.OWLEntity;
-import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLLiteral;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
-import org.semanticweb.owlapi.model.OWLObjectIntersectionOf;
-import org.semanticweb.owlapi.model.OWLObjectMinCardinality;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
-import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
-import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.PrefixManager;
 import org.semanticweb.owlapi.model.parameters.Imports;
-import org.semanticweb.owlapi.profiles.OWL2DLProfile;
 import org.semanticweb.owlapi.profiles.OWLProfile;
 import org.semanticweb.owlapi.profiles.OWLProfileReport;
-import org.semanticweb.owlapi.reasoner.NodeSet;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.reasoner.structural.StructuralReasonerFactory;
-import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
-import org.semanticweb.owlapi.util.InferredOntologyGenerator;
-import org.semanticweb.owlapi.util.OWLAPIStreamUtils;
-import org.semanticweb.owlapi.util.OWLEntityRemover;
-import org.semanticweb.owlapi.util.OWLOntologyMerger;
-import org.semanticweb.owlapi.util.SimpleIRIMapper;
 import org.semanticweb.owlapi.vocab.OWL2Datatype;
 
-import com.clarkparsia.owlapi.explanation.BlackBoxExplanation;
-import com.clarkparsia.owlapi.explanation.HSTExplanationGenerator;
-
-import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl;
-import uk.ac.manchester.cs.owl.owlapi.OWLDataPropertyImpl;
-import uk.ac.manchester.cs.owl.owlapi.OWLNamedIndividualImpl;
-import uk.ac.manchester.cs.owl.owlapi.OWLObjectPropertyImpl;
-
 /**
- * A wrapper for an ontology in OWL. Creates convenient methods that shorten the use of OWLApi.
+ * A wrapper for an ontology in OWL. It works more like a method aggregator from different helper classes. Hence, it shortens the use of OWLApi. 
  * @author Iván Castilla Rodríguez
- *
  */
 public class OWLOntologyWrapper {
-	/** 
-	 * The OWL ontology manager 
-	 */
-	@Nonnull
-	private final OWLOntologyManager manager;
-	/** 
-	 * The OWL ontology 
-	 */
-	@Nonnull
-	private OWLOntology ontology;
-	/** 
-	 * The prefix manager for the ontology 
-	 */
-	@Nonnull
-	private final PrefixManager pm;
 	/**
-	 * The OWL data factory
+	 * Modes for checking or quering instanceOf relationships
 	 */
-	@Nonnull
-    private final OWLDataFactory factory;
-	/**
-	 * The OWL reasoner factory
-	 */
-	@Nonnull
-	private final OWLReasonerFactory reasonerFactory;
-	/**
-	 * The OWL reasoner
-	 */
-    private OWLReasoner reasoner;
-
-    /**
-	 * Creates a wrapper for the ontology in the input stream
-	 * @param inputStream The input stream with the ontology 
-	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
-	 */
-	public OWLOntologyWrapper(InputStream inputStream, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromStream(inputStream, localMappings));
-    }
+	public enum InstanceCheckMode {
+		ASSERTED_DIRECT,
+		ASSERTED_ALL,
+		INFERRED_DIRECT,
+		INFERRED_ALL
+	}	
 
 	/**
-	 * Creates a wrapper for the ontology in the file with the specified path
-	 * @param path Path to the file with the ontology
-	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
+	 * The context for this ontology wrapper
 	 */
-	public OWLOntologyWrapper(String path, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromPath(path, localMappings));
+	private final OntologyContext ctx;
+	/**
+	 * The ontology IO helper
+	 */
+	private final OntologyIO ontologyIO;
+	/**
+	 * The ontology resolution helper
+	 */
+	private final OntologyResolution ontologyResolution;
+	/**
+	 * The individual authoring helper
+	 */
+	private final IndividualAuthoring individualAuthoring;
+	/**
+	 * The individual query helper 
+	 */
+	private final IndividualQuery individualQuery;
+	/**
+	 * The reasoned query helper
+	 */
+	private final ReasonedQuery reasonedQuery;
+	/**
+	 * The ontology refactoring helper
+	 */
+	private final OntologyRefactoring ontologyRefactoring;
+	/**
+	 * The debug printer helper 
+	 */
+	private final OntologyDebugPrinter debugPrinter;
+
+	/**
+	 * Creates a wrapper for the specified ontology and checks it against the specified profile
+	 * @param loaded The loaded ontology
+	 * @param profileToCheck The profile to check against
+	 * @throws OWLOntologyCreationException If the ontology does not comply with the specified profile
+	 */
+	public OWLOntologyWrapper(LoadedOntology loaded, OWLProfile profileToCheck) throws OWLOntologyCreationException {
+		this(loaded);
+		Objects.requireNonNull(profileToCheck, "profileToCheck should never be null");
+        final OWLProfileReport report = profileToCheck.checkOntology(Objects.requireNonNull(loaded.ontology(), "OWL Ontology should never be null"));
+		if (!report.isInProfile()) {
+			throw new OWLOntologyCreationException(
+				"Ontology does NOT comply with profile " + profileToCheck.getName() + ". Violations: " + report);
+		}
 	}
 
 	/**
-	 * Creates a wrapper for the ontology with the specified IRI
-	 * @param iri The IRI of the ontology
-	 * @param localMappings Optional local mappings for IRIs, in the form "http://example.org/ontology#=path/to/local/file.owl"
-	 * @throws OWLOntologyCreationException If the ontology cannot be opened
-	 */
-	public OWLOntologyWrapper(IRI iri, String... localMappings) throws OWLOntologyCreationException {
-		this(OWLOntologyLoader.fromIRI(iri, localMappings));
-	}
-
-	private OWLOntologyWrapper(OWLOntologyLoader loader) throws OWLOntologyCreationException {
-		this(loader.getOntology());
-	}
-
-	/**
-	 * 
+	 * Creates a wrapper for the specified ontology
 	 * @param ontology The OWL ontology
-	 * @throws OWLOntologyCreationException
 	 */
-	@SuppressWarnings("null")
-	public OWLOntologyWrapper(OWLOntology ontology) throws OWLOntologyCreationException {
-		ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
-		this.manager = Objects.requireNonNull(ontology.getOWLOntologyManager(), "OWLOntologyManager should never be null");
-        this.reasonerFactory = new StructuralReasonerFactory();
-        this.factory = Objects.requireNonNull(manager.getOWLDataFactory(), "OWL Data Factory should never be null");
-		setOntology(ontology);
-		this.pm = new DefaultPrefixManager();
-		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+	public OWLOntologyWrapper(LoadedOntology loaded) {
+		final OWLOntology ont = Objects.requireNonNull(loaded.ontology(), "OWL Ontology should never be null");
+		final OWLOntologyManager manager = Objects.requireNonNull(loaded.manager(), "OWLOntologyManager should never be null");
+		final PrefixManager pm = buildPrefixManagerFromOntologyFormat(manager, ont);
+		final OWLReasonerFactory rf = new StructuralReasonerFactory();
 
-		if (format != null && format.isPrefixOWLDocumentFormat()) {
-			PrefixDocumentFormat prefixFormat = format.asPrefixOWLDocumentFormat();
-			// Copies the prefixes to the local prefix manager
-			prefixFormat.getPrefixName2PrefixMap().forEach((name, prefIRI) -> {
-				pm.setPrefix(Objects.requireNonNull(name, "Prefix name should never be null"), Objects.requireNonNull(prefIRI, "Prefix IRI should never be null"));
-			});
-		}		
+		this.ctx = new OntologyContext(loaded, pm, rf);
+		this.ontologyIO = new OntologyIO(ctx);
+		this.ontologyResolution = new OntologyResolution(ctx);
+		this.individualAuthoring = new IndividualAuthoring(ctx);
+		this.individualQuery = new IndividualQuery(ctx);
+		this.reasonedQuery = new ReasonedQuery(ctx);
+		this.ontologyRefactoring = new OntologyRefactoring(ctx, ontologyResolution, individualQuery);
+		this.debugPrinter = new OntologyDebugPrinter(ctx, ontologyResolution, individualQuery);
 	}
+
+	/**
+	 * Builds a PrefixManager from the ontology format, if possible
+	 * @param manager The ontology manager
+	 * @param ontology The ontology
+	 * @return The PrefixManager
+	 */
+	private static PrefixManager buildPrefixManagerFromOntologyFormat(OWLOntologyManager manager, OWLOntology ontology) {
+		Objects.requireNonNull(manager, "OWLOntologyManager should never be null");
+		Objects.requireNonNull(ontology, "OWL Ontology should never be null");
+		final PrefixManager pm = new DefaultPrefixManager();
+
+		final OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+		if (format != null && format.isPrefixOWLDocumentFormat()) {
+			final PrefixDocumentFormat prefixFormat = format.asPrefixOWLDocumentFormat();
+			// Copies the prefixes to the local prefix manager
+			prefixFormat.getPrefixName2PrefixMap()
+					.forEach((name, prefIRI) -> pm.setPrefix(
+							Objects.requireNonNull(name, "Prefix name should never be null"),
+							Objects.requireNonNull(prefIRI, "Prefix IRI should never be null")));
+		}
+		return pm;
+	}	
 
 	/**
 	 * Returns the ontology
 	 * @return The ontology
 	 */
 	public OWLOntology getOntology() {
-		return ontology;
+		return ctx.getOntology();
 	}
 
 	/**
@@ -188,7 +153,7 @@ public class OWLOntologyWrapper {
 	 * @return The reasoner used for this ontology
 	 */
 	public OWLReasoner getReasoner() {
-		return reasoner;
+		return ctx.getReasoner();
 	}
 
 	/**
@@ -196,7 +161,7 @@ public class OWLOntologyWrapper {
 	 * @return The data factory
 	 */
 	public OWLDataFactory getDataFactory() {
-		return factory;
+		return ctx.getFactory();
 	}
 
 	/**
@@ -204,51 +169,70 @@ public class OWLOntologyWrapper {
 	 * @return The ontology manager
 	 */
 	public OWLOntologyManager getManager() {
-		return manager;
+		return ctx.getManager();
 	}
 
 	/**
-	 * Sets the main ontology and checks that it complies with the OWL2 DL profile
-	 * @param ontology The ontology to set
-	 * @throws OWLOntologyCreationException If the ontology does not comply with the OWL2 DL profile
+	 * Returns the debug printer of the ontology, with utility methods for debugging
+	 * @return The debug printer of the ontology
 	 */
-	public void setOntology(OWLOntology ontology) throws OWLOntologyCreationException {
-		this.ontology = Objects.requireNonNull(ontology, "OWL Ontology should never be null");
-		checkProfile();
-		this.reasoner = Objects.requireNonNull(reasonerFactory.createReasoner(ontology), "OWL Reasoner should never be null");
-		// Ask the reasoner to do all the necessary work now
-		reasoner.precomputeInferences();
+	public OntologyDebugPrinter	 getDebugPrinter() {
+		return this.debugPrinter;
 	}
 
 	/**
-	 * Adds an ontology from the specified IRI. The new ontology becomes the main ontology handled by this wrapper.
+	 * Returns the ontology refactoring helper, with utility methods for refactoring
+	 * @return The ontology refactoring helper
+	 */
+	public OntologyRefactoring getOntologyRefactoring() {
+		return this.ontologyRefactoring;
+	}
+
+	/**
+	 * Returns the reasoned query helper, with utility methods for querying inferred information
+	 * @return The reasoned query helper
+	 */
+	public ReasonedQuery getReasonedQuery() {
+		return this.reasonedQuery;
+	}
+
+	/**
+	 * Converts a textual reference to an IRI. Accepts: (1) Absolute IRI: "https://...#X"; (2) - Prefixed name: "osdi:X", ":X"; 
+	 * and (3) Short form: "X" (the default prefix of the PrefixManager is assumed).
+	 * @param ref The textual reference
+	 * @return The corresponding IRI
+	 */
+	public IRI toIRI(String ref) {
+		return this.ontologyResolution.toIRI(ref);
+	}
+
+	/**
+	 * Converts an IRI to its short form using the PrefixManager
+	 * @param iri The IRI to convert
+	 * @return The short form of the IRI
+	 */
+	public String toShortForm(IRI iri) {
+    	return this.ontologyResolution.toShortForm(iri);
+	}
+
+	/**
+	 * Best-effort prefixed name, falling back to short form.
+	 * Useful for debugging/logging.
+	 * @param iri The IRI to convert
+	 * @return The prefixed name or short form of the IRI
+	 */
+	public String toPrefixedName(final IRI iri) {
+		return this.ontologyResolution.toPrefixedName(iri);
+	}
+
+	/**
+	 * Loads another ontology from the specified source and makes it available in the manager
 	 * @param iri The IRI of the new ontology
+	 * @return The loaded ontology
 	 * @throws OWLOntologyCreationException 
 	 */
-	public void addOntology(IRI iri) throws OWLOntologyCreationException {
-		setOntology(manager.loadOntology(Objects.requireNonNull(iri, "IRI should never be null")));
-	}
-
-	/**
-	 * Adds an ontology from the specified input stream. The new ontology becomes the main ontology handled by this wrapper.
-	 * @param inputStream The input stream containing the ontology
-	 * @throws OWLOntologyCreationException 
-	 */
-	public void addOntology(InputStream inputStream) throws OWLOntologyCreationException {
-		setOntology(manager.loadOntologyFromOntologyDocument(Objects.requireNonNull(inputStream, "InputStream should never be null")));
-	}
-
-	/**
-	 * Adds an ontology from the specified file. The new ontology becomes the main ontology handled by this wrapper.
-	 * @param path The path to the file containing the ontology
-	 * @throws OWLOntologyCreationException 
-	 */
-	public void addOntology(String path) throws OWLOntologyCreationException {
-		try {
-			this.addOntology(new FileInputStream(path));
-		} catch (FileNotFoundException e) {
-			throw new OWLOntologyCreationException("The ontology file was not found: " + path, e);
-		}
+	public OWLOntology loadOntology(final OWLOntologyDocumentSource source) throws OWLOntologyCreationException {
+		return ontologyIO.loadOntology(source);
 	}
 
 	/**
@@ -256,162 +240,149 @@ public class OWLOntologyWrapper {
 	 * @throws OWLOntologyStorageException If the ontology cannot be saved or if the ontology was not loaded from a file
 	 */
 	public void save() throws OWLOntologyStorageException {
-		IRI docIRI = manager.getOntologyDocumentIRI(ontology);
-		if (!"file".equalsIgnoreCase(docIRI.getScheme())) {
-			throw new OWLOntologyStorageException(
-				"Ontology was not loaded from a file. Use saveAs(...) to specify a local path.");
-		}
-		manager.saveOntology(ontology);
+		ontologyIO.save();
 	}
 
     /** 
-	 * Saves the ontology to the specified path. It also updates the document IRI of the ontology to the new path.
-	 * @param path The path to the file where the ontology will be saved
+	 * Saves the ontology to the specified destination. It also updates the document IRI of the ontology to the new path.
+	 * @param destination The destination where the ontology will be saved
 	 * @throws OWLOntologyStorageException If the ontology cannot be saved
 	 */
-    public void saveAs(Path path) throws OWLOntologyStorageException {
-		saveAs(IRI.create(Objects.requireNonNull(path.toUri())));
+    public void saveAs(OntologyDestination destination) throws OWLOntologyStorageException {
+		ontologyIO.saveAs(destination);
     }
-
-    /** 
-	 * Saves the ontology to the specified file. It also updates the document IRI of the ontology to the new file path.
-	 * @param file The file where the ontology will be saved
-	 * @throws OWLOntologyStorageException If the ontology cannot be saved
-	 */
-    public void saveAs(File file) throws OWLOntologyStorageException {
-        saveAs(file.toPath());
-    }
-
-    /**
-	 * Saves the ontology to the specified IRI. It also updates the document IRI of the ontology to the new IRI.
-	 * @param documentIRI The IRI where the ontology will be saved
-	 * @throws OWLOntologyStorageException If the ontology cannot be saved
-	 */
-    public void saveAs(IRI documentIRI) throws OWLOntologyStorageException {
-		manager.setOntologyDocumentIRI(ontology, Objects.requireNonNull(documentIRI));
-        manager.saveOntology(ontology);
-    }
-
-	/**
-	 * Adds a local path mapping for an IRI
-	 * @param iri The IRI of the ontology to map
-	 * @param path The path to the local file
-	 */
-	public void addLocalIRIMapper(String iri, String path) {
-		IRI schemaIRI = IRI.create(Objects.requireNonNull(iri, "IRI should never be null"));
-		File schemaFile = Objects.requireNonNull(new File(path), "File should never be null");
-		manager.getIRIMappers().add(new SimpleIRIMapper(schemaIRI, IRI.create(schemaFile)));		
-	}
-
-	/**
-	 * Merges another ontology with a previously loaded one
-	 * @param inputStream The input stream containing the ontology to merge
-	 * @throws OWLOntologyCreationException If the ontology cannot be merged
-	 */
-	public void mergeOtherOntology(InputStream inputStream) throws OWLOntologyCreationException {
-		final OWLOntology otherOntology = manager.loadOntologyFromOntologyDocument(Objects.requireNonNull(inputStream, "InputStream should never be null"));
-		final IRI mergedIRI = Objects.requireNonNull(IRI.create(otherOntology.getOntologyID().getOntologyIRI().get() + "-merged"), "Merged IRI should never be null");
-		ontology = Objects.requireNonNull(new OWLOntologyMerger(manager).createMergedOntology(manager, mergedIRI), "Merged ontology should never be null");
-	}
-
-	/**
-	 * Merges another ontology with a previously loaded one
-	 * @param path The path to the file containing the ontology to merge
-	 * @throws OWLOntologyCreationException If the ontology cannot be merged
-	 */
-	public void mergeOtherOntology(String path) throws OWLOntologyCreationException {
-		try {
-			this.mergeOtherOntology(new FileInputStream(path));
-		} catch (FileNotFoundException e) {
-			throw new OWLOntologyCreationException("The ontology file was not found: " + path, e);
-		}
-	}
 
 	/**
 	 * Adds an individual of a specified class to the ontology, unless the individual already exists
-	 * @param classIRI The IRI of the class
-	 * @param individualIRI The IRI of the new individual
+	 * @param classIri The IRI of the class
+	 * @param individualIri The IRI of the new individual
 	 * @return True if the individual was created; false otherwise
 	 */
-	public boolean addIndividual(String classIRI, String individualIRI) {
-		final OWLNamedIndividual owlIndividual = factory.getOWLNamedIndividual(individualIRI, pm);
-		final boolean ok = !ontology.containsIndividualInSignature(owlIndividual.getIRI(), Imports.INCLUDED);
-
-		if (ok) {
-			final OWLClass owlClass = factory.getOWLClass(classIRI, pm);
-			final OWLClassAssertionAxiom classAssertion = factory.getOWLClassAssertionAxiom(owlClass, owlIndividual);
-			manager.addAxiom(ontology, classAssertion);
-		}
-		return ok;
+	public boolean createIndividual(IRI classIri, IRI individualIri) {
+		return individualAuthoring.createIndividual(classIri, individualIri);
 	}
-	
+
 	/**
-	 * Adds an object property value to the specified individual, linking it to another individual.
-	 * @param srcIndividualIRI The IRI of the source individual
-	 * @param objectProperty The IRI of the object property
-	 * @param destIndividualIRI The IRI of the destination individual
+	 * Asserts that the specified individual is an instance of the specified class
+	 * @param classIri The IRI of the class
+	 * @param individualIri The IRI of the individual
+	 * @return True if the assertion was added; false if it already existed
 	 */
-	public boolean addObjectPropertyValue(String srcIndividualIRI, String objectProperty, String destIndividualIRI) {
-		final OWLNamedIndividual owlSrcIndividual = factory.getOWLNamedIndividual(srcIndividualIRI, pm);
-		final OWLNamedIndividual owlDestIndividual = factory.getOWLNamedIndividual(destIndividualIRI, pm);
-		final OWLObjectProperty owlObjectProperty = factory.getOWLObjectProperty(objectProperty, pm);
-
-		boolean srcExists = ontology.containsIndividualInSignature(owlSrcIndividual.getIRI(), Imports.INCLUDED);
-		boolean destExists = ontology.containsIndividualInSignature(owlDestIndividual.getIRI(), Imports.INCLUDED);
-		boolean propExists = ontology.containsObjectPropertyInSignature(owlObjectProperty.getIRI(), Imports.INCLUDED);
-
-		if (srcExists && destExists && propExists) {
-			final OWLObjectPropertyAssertionAxiom objectPropertyAssertion =
-				factory.getOWLObjectPropertyAssertionAxiom(owlObjectProperty, owlSrcIndividual, owlDestIndividual);
-			manager.addAxiom(ontology, objectPropertyAssertion);
-			return true;
-		} else {
-			return false;
-		}
+	public boolean assertIndividualClass(IRI classIri, IRI individualIri) {
+		return individualAuthoring.assertType(individualIri, classIri);
 	}
 
 	/**
-	 * Adds a string data property value to the specified individual.
-	 * @param individualIRI The IRI of the individual to which the data property will be added
-	 * @param dataProperty The IRI of the data property
+	 * Asserts that the specified subject individual is linked to the object individual via the specified object property
+	 * @param subjectIri The IRI of the subject individual
+	 * @param propertyIri The IRI of the object property
+	 * @param objectIri The IRI of the object individual
+	 * @return True if the assertion was added; false if it already existed
+	 */
+	public boolean assertObjectProperty(IRI subjectIri, IRI propertyIri, IRI objectIri) {
+		return individualAuthoring.assertObjectProperty(subjectIri, propertyIri, objectIri);
+	}
+
+	/**
+	 * Asserts a data property value for the specified individual.
+	 * @param subjectIri The IRI of the individual
+	 * @param dataPropertyIri The IRI of the data property
 	 * @param value The value to be assigned to the data property
-	 * @return true if the data property value was added successfully; false if the individual or the data property does not exist
+	 * @return true if the data property value was added successfully; false if the axiom already exists
 	 */
-	public boolean addDataPropertyValue(String individualIRI, String dataProperty, String value) {
-		return addDataPropertyValue(individualIRI, dataProperty, value, OWL2Datatype.XSD_STRING);
+	public boolean assertDataProperty(IRI subjectIri, IRI dataPropertyIri, OWLLiteral value) {
+		return individualAuthoring.assertDataProperty(subjectIri, dataPropertyIri, value);
 	}
 
 	/**
-	 * Adds a data property value to the specified individual with a specific OWL2 datatype.
-	 * @param individualIRI The IRI of the individual to which the data property will be added
-	 * @param dataProperty The IRI of the data property
-	 * @param value The value to be assigned to the data property
-	 * @param dataType The OWL2 datatype of the value
-	 * @return true if the data property value was added successfully; false if the individual or the data propertydoes not exist
+	 * Asserts a data property value for the specified individual, given a lexical value and a datatype.
+	 * @param subjectIri The IRI of the individual
+	 * @param dataPropertyIri The IRI of the data property
+	 * @param lexicalValue The lexical value of the data property
+	 * @param datatype The datatype of the data property
+	 * @return true if the data property value was added successfully; false if the axiom already exists
 	 */
-	public boolean addDataPropertyValue(String individualIRI, String dataProperty, String value, OWL2Datatype dataType) {
-        final OWLNamedIndividual owlIndividual = factory.getOWLNamedIndividual(individualIRI, pm);
-        final OWLDataProperty owlDataProperty = factory.getOWLDataProperty(dataProperty, pm);
+	public boolean assertDataProperty(IRI subjectIri, IRI dataPropertyIri, String lexicalValue, OWL2Datatype datatype) {
+		Objects.requireNonNull(lexicalValue, "lexicalValue must not be null");
+		Objects.requireNonNull(datatype, "datatype must not be null");
 
-		boolean srcExists = ontology.containsIndividualInSignature(owlIndividual.getIRI(), Imports.INCLUDED);
-		boolean propExists = ontology.containsDataPropertyInSignature(owlDataProperty.getIRI(), Imports.INCLUDED);
-		if (srcExists && propExists) {
-			final OWLLiteral literal = factory.getOWLLiteral(value, factory.getOWLDatatype(dataType));
-			final OWLAxiom ax = factory.getOWLDataPropertyAssertionAxiom(owlDataProperty, owlIndividual, literal);
-			manager.addAxiom(ontology, ax);
-			return true;
-		} else {
-			return false;
-		}
+		final OWLLiteral lit = getDataFactory().getOWLLiteral(lexicalValue, datatype);
+		return assertDataProperty(subjectIri, dataPropertyIri, lit);
 	}
-	
+
+	/**
+	 * Asserts a data property value for the specified individual, given a lexical value (xsd:string datatype is assumed).
+	 * @param subjectIri The IRI of the individual
+	 * @param dataPropertyIri The IRI of the data property
+	 * @param lexicalValue The lexical value of the data property
+	 * @return true if the data property value was added successfully; false if the axiom already exists
+	 */
+	public boolean assertDataProperty(IRI subjectIri, IRI dataPropertyIri, String lexicalValue) {
+		Objects.requireNonNull(lexicalValue, "lexicalValue must not be null");
+		// xsd:string is the default datatype
+		final OWLLiteral lit = getDataFactory().getOWLLiteral(lexicalValue);
+		return assertDataProperty(subjectIri, dataPropertyIri, lit);
+	}
+
+	/**
+	 * Asserts a data property value for the specified individual, given a lexical value and a language tag.
+	 * @param subjectIri The IRI of the individual
+	 * @param dataPropertyIri The IRI of the data property
+	 * @param lexicalValue The lexical value of the data property
+	 * @param lang The language tag
+	 * @return true if the data property value was added successfully; false if the axiom already exists
+	 */
+	public boolean assertDataProperty(IRI subjectIri, IRI dataPropertyIri, String lexicalValue, String lang) {
+		Objects.requireNonNull(lexicalValue, "lexicalValue must not be null");
+		Objects.requireNonNull(lang, "lang must not be null");
+
+		final OWLLiteral lit = getDataFactory().getOWLLiteral(lexicalValue, lang);
+		return assertDataProperty(subjectIri, dataPropertyIri, lit);
+	}
+
+	/**
+	 * Asserts a data property value for the specified individual, given an integer value.
+	 * @param subjectIri The IRI of the individual
+	 * @param dataPropertyIri The IRI of the data property
+	 * @param value The integer value of the data property
+	 * @return true if the data property value was added successfully; false if the axiom already exists
+	 */
+	public boolean assertDataProperty(IRI subjectIri, IRI dataPropertyIri, int value) {
+		final OWLLiteral lit = getDataFactory().getOWLLiteral(value);
+		return assertDataProperty(subjectIri, dataPropertyIri, lit);
+	}
+
+	/**
+	 * Asserts a data property value for the specified individual, given a double value.
+	 * @param subjectIri The IRI of the individual
+	 * @param dataPropertyIri The IRI of the data property
+	 * @param value The double value of the data property
+	 * @return true if the data property value was added successfully; false if the axiom already exists
+	 */
+	public boolean assertDataProperty(IRI subjectIri, IRI dataPropertyIri, double value) {
+		final OWLLiteral lit = getDataFactory().getOWLLiteral(value);
+		return assertDataProperty(subjectIri, dataPropertyIri, lit);
+	}
+
+	/**
+	 * Asserts a data property value for the specified individual, given a boolean value.
+	 * @param subjectIri The IRI of the individual
+	 * @param dataPropertyIri The IRI of the data property
+	 * @param value The boolean value of the data property
+	 * @return true if the data property value was added successfully; false if the axiom already exists
+	 */
+	public boolean assertDataProperty(IRI subjectIri, IRI dataPropertyIri, boolean value) {
+		final OWLLiteral lit = getDataFactory().getOWLLiteral(value);
+		return assertDataProperty(subjectIri, dataPropertyIri, lit);
+	}
+
 	/**
 	 * Returns the OWLClass object for the specified class IRI, independently of whether it exists or not
-	 * @param classIRI The IRI of the class
+	 * @param classIri The IRI of the class
 	 * @return The OWLClass object for the specified class IRI
 	 */
-	public OWLClass getOWLClass(String classIRI) {
-		return factory.getOWLClass(Objects.requireNonNull(classIRI), pm);
+	public OWLClass asOWLClass(IRI classIri) {
+		return this.ontologyResolution.asOWLClass(Objects.requireNonNull(classIri));
 	}
 	
 	/**
@@ -419,17 +390,17 @@ public class OWLOntologyWrapper {
 	 * @param objectPropIRI The IRI of the object property
 	 * @return The OWLObjectProperty object for the specified object property IRI
 	 */
-	public OWLObjectProperty getOWLObjectProperty(String objectPropIRI) {
-		return factory.getOWLObjectProperty(Objects.requireNonNull(objectPropIRI), pm);
+	public OWLObjectProperty asOWLObjectProperty(IRI objectPropIRI) {
+		return this.ontologyResolution.asOWLObjectProperty(Objects.requireNonNull(objectPropIRI));
 	}
-	
+
 	/**
 	 * Returns the OWLDataProperty object for the specified data property IRI, independently of whether it exists or not
 	 * @param dataPropIRI The IRI of the data property
 	 * @return The OWLDataProperty object for the specified data property IRI
 	 */
-	public OWLDataProperty getOWLDataProperty(String dataPropIRI) {
-		return factory.getOWLDataProperty(Objects.requireNonNull(dataPropIRI), pm);
+	public OWLDataProperty asOWLDataProperty(IRI dataPropIRI) {
+		return this.ontologyResolution.asOWLDataProperty(Objects.requireNonNull(dataPropIRI));
 	}
 	
 	/**
@@ -437,708 +408,266 @@ public class OWLOntologyWrapper {
 	 * @param individualIRI The IRI of the individual
 	 * @return The OWLIndividual object for the specified individual IRI
 	 */
-	public OWLIndividual getOWLIndividual(String individualIRI) {
-		return factory.getOWLNamedIndividual(Objects.requireNonNull(individualIRI), pm);
+	public OWLNamedIndividual asOWLIndividual(IRI individualIRI) {
+		return this.ontologyResolution.asOWLNamedIndividual(Objects.requireNonNull(individualIRI));
 	}
 
-    /**
+	/**
+	 * Returns the OWLAnnotationProperty object for the specified annotation property IRI, independently of whether it exists or not
+	 * @param annotationPropIRI The IRI of the annotation property
+	 * @return The OWLAnnotationProperty object for the specified annotation property IRI
+	 */
+	public OWLAnnotationProperty asOWLAnnotationProperty(IRI annotationPropIRI) {
+		return this.ontologyResolution.asOWLAnnotationProperty(Objects.requireNonNull(annotationPropIRI));
+	}
+
+	/**
 	 * Returns the OWLClass object for the specified class IRI, only if it is already defined
-	 * @param classIRI The IRI of the class
-	 * @return The OWLClass object for the specified class IRI, null if it is not defined
-     */
-    public OWLClass getOWLClassIfExists(String classIRI) {
-        final OWLClass cls = factory.getOWLClass(Objects.requireNonNull(classIRI), pm);
-        if (cls != null && ontology.isDeclared(cls, Imports.INCLUDED)) {
-            return cls;
-        }
-        return null;
-    }
+	 * @param classIri The IRI of the class
+	 * @return The OWLClass object for the specified class IRI, wrapped in an Optional
+	 */
+	public Optional<OWLClass> findOWLClass(IRI classIri) {
+		return this.ontologyResolution.findOWLClass(classIri, Imports.INCLUDED);
+	}
 
 	/**
 	 * Returns the OWLObjectProperty object for the specified object property IRI, only if it is already defined
-	 * @param objectPropIRI The IRI of the object property
-	 * @return The OWLObjectProperty object for the specified object property IRI, null if it is not defined
+	 * @param propIri The IRI of the object property
+	 * @return The OWLObjectProperty object for the specified object property IRI, wrapped in an Optional
 	 */
-    public OWLObjectProperty getOWLObjectPropertyIfExists(String objectPropIRI) {
-        final OWLObjectProperty prop = factory.getOWLObjectProperty(Objects.requireNonNull(objectPropIRI), pm);
-        if (prop != null && ontology.isDeclared(prop, Imports.INCLUDED)) {
-            return prop;
-        }
-        return null;
-    }
+	public Optional<OWLObjectProperty> findOWLObjectProperty(IRI propIri) {
+		return this.ontologyResolution.findOWLObjectProperty(propIri, Imports.INCLUDED);
+	}
 
 	/**
 	 * Returns the OWLDataProperty object for the specified data property IRI, only if it is already defined
-	 * @param dataPropIRI The IRI of the data property
-	 * @return The OWLDataProperty object for the specified data property IRI, null if it is not defined
+	 * @param propIri The IRI of the data property
+	 * @return The OWLDataProperty object for the specified data property IRI, wrapped in an Optional
 	 */
-    public OWLDataProperty getOWLDataPropertyIfExists(String dataPropIRI) {
-        final OWLDataProperty prop = factory.getOWLDataProperty(Objects.requireNonNull(dataPropIRI), pm);
-        if (prop != null && ontology.isDeclared(prop, Imports.INCLUDED)) {
-            return prop;
-        }
-        return null;
-    }
+	public Optional<OWLDataProperty> findOWLDataProperty(IRI propIri) {
+		return this.ontologyResolution.findOWLDataProperty(propIri, Imports.INCLUDED);
+	}
 
 	/**
 	 * Returns the OWLIndividual object for the specified individual IRI, only if it is already defined
-	 * @param individualIRI The IRI of the individual
-	 * @return The OWLIndividual object for the specified individual IRI, null if it is not defined
+	 * @param indIri The IRI of the individual
+	 * @return The OWLIndividual object for the specified individual IRI, wrapped in an Optional
 	 */
-    public OWLNamedIndividual getOWLIndividualIfExists(String individualIRI) {
-        final OWLNamedIndividual ind = factory.getOWLNamedIndividual(Objects.requireNonNull(individualIRI), pm);
-        if (ind != null && ontology.isDeclared(ind, Imports.INCLUDED)) {
-            return ind;
-        }
-        return null;
+	public Optional<OWLNamedIndividual> findOWLIndividual(IRI indIri) {
+		return this.ontologyResolution.findOWLNamedIndividual(indIri, Imports.INCLUDED);
+	}
+
+    /**
+     * Returns all individuals in the ontology signature.
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return A set of individual IRIs
+     */
+    public Set<IRI> getIndividualsInSignature(final Imports imports) {
+		return this.individualQuery.getIndividualsInSignature(imports);
     }
 
-	/**
-	 * Returns a set of strings representing the names of the individuals in the ontology
-	 * @return a set of strings representing the names of the individuals in the ontology
-	 */
-	public Set<String> individualsToString() {
-		final TreeSet<String> set = new TreeSet<>();
-		for (OWLNamedIndividual individual : ontology.getIndividualsInSignature(Imports.INCLUDED)) {
-			set.add(individual.getIRI().getShortForm());
-		}
-		return set;
-	}
+    /**
+     * Returns all classes in the ontology signature.
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return A set of class IRIs
+     */
+    public Set<IRI> getClassesInSignature(final Imports imports) {
+		return this.individualQuery.getClassesInSignature(imports);
+    }
+
+    /**
+     * Returns all object properties in the ontology signature.
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return A set of object property IRIs
+     */
+    public Set<IRI> getObjectPropertiesInSignature(final Imports imports) {
+        return this.individualQuery.getObjectPropertiesInSignature(imports);
+    }
+
+    /**
+     * Returns all data properties in the ontology signature.
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return A set of data property IRIs
+     */
+    public Set<IRI> getDataPropertiesInSignature(final Imports imports) {
+        return this.individualQuery.getDataPropertiesInSignature(imports);
+    }
 	
 	/**
-	 * Returns a set of strings representing the names of the classes in the ontology
-	 * @return a set of strings representing the names of the classes in the ontology
+	 * Returns true if the specified individual is an instance of the specified class, according to the specified mode
+	 * @param individualIri The IRI of an individual in the ontology
+	 * @param classIri The IRI of a class in the ontology
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+	 * @param mode The instance check mode (ASSERTED, INFERRED_DIRECT, INFERRED_ALL)
+	 * @return true if the specified individual is an instance of the specified class, according to the specified mode.
 	 */
-	public Set<String> classesToString() {
-		final TreeSet<String> set = new TreeSet<>();
-		for (OWLClass clazz : ontology.getClassesInSignature(Imports.INCLUDED)) {
-			set.add(clazz.getIRI().getShortForm());
-		}
-		return set;
-	}
-	
-	/**
-	 * Returns a set of strings representing the names of the data properties in the ontology
-	 * @return a set of strings representing the names of the data properties in the ontology
-	 */
-	public Set<String> dataPropertiesToString() {
-		final TreeSet<String> set = new TreeSet<>();
-		for (OWLDataProperty dataProp : ontology.getDataPropertiesInSignature(Imports.INCLUDED)) {
-			set.add(dataProp.getIRI().getShortForm());
-		}
-		return set;
-	}
-	
-	/**
-	 * Returns a set of strings representing the names of the object properties in the ontology
-	 * @return a set of strings representing the names of the object properties in the ontology
-	 */
-	public Set<String> objectPropertiesToString() {
-		final TreeSet<String> set = new TreeSet<>();
-		for (OWLObjectProperty objectProp : ontology.getObjectPropertiesInSignature(Imports.INCLUDED)) {
-			set.add(objectProp.getIRI().getShortForm());
-		}
-		return set;
-	}
-	
-	/**
-	 * Returns true if the specified individual is an instance of the specified class (or any of its subclasses)
-	 * @param individualIRI The IRI of an individual in the ontology
-	 * @param classIRI The IRI of a class in the ontology
-	 * @return true if the specified individual is instance of the specified class (or any of its subclasses).
-	 */
-	public boolean isInstanceOf(String individualIRI, String classIRI) {
-		return getIndividuals(classIRI).contains(individualIRI);
+	public boolean isInstanceOf(IRI individualIri, IRI classIri, Imports importsForAsserted, InstanceCheckMode mode) {
+		Objects.requireNonNull(mode, "mode must not be null");
+
+		return switch (mode) {
+			case ASSERTED_DIRECT -> this.individualQuery.isInstanceOfAsserted(individualIri, classIri, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.isInstanceOfAsserted(individualIri, classIri, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.isInstanceOfInferred(individualIri, classIri, true);
+			case INFERRED_ALL -> this.reasonedQuery.isInstanceOfInferred(individualIri, classIri);
+		};
 	}
 	
 	/**
 	 * Returns true if the ontology contains the specified individual
-	 * @param individualIRI The IRI of an individual in the ontology
+	 * @param individualIri The IRI of an individual in the ontology
+	 * @param imports Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED)
 	 * @return true if the ontology contains the specified individual
 	 */
-	public boolean containsIndividual(String individualIRI) {
-		return ontology.containsIndividualInSignature(factory.getOWLNamedIndividual(individualIRI, pm).getIRI(), Imports.INCLUDED);
+	public boolean existsIndividual(IRI individualIri, Imports imports) {
+		return this.ontologyResolution.existsOWLNamedIndividual(individualIri, imports);
 	}
 
 	/**
 	 * Returns a set of individuals belonging at the same time to ALL the specified classes or any of its subclasses
 	 * @param classIRIs A collection of IRIs for classes in the ontology
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL)
 	 * @return a set of individuals belonging at the same time to ALL the specified classes or any of its subclasses
 	 */
-	public Set<String> getIndividuals(ArrayList<String> classIRIs) {
+	public Set<IRI> getIndividualsOfAllClasses(List<IRI> classIRIs, Imports importsForAsserted, InstanceCheckMode mode) {
 		if (classIRIs.size() == 0)
 			return new TreeSet<>();
-		final Set<String> set = getIndividuals(classIRIs.get(0));
+		final Set<IRI> set = getIndividualsOfClass(classIRIs.get(0), importsForAsserted, mode);
 		for (int i = 1; i < classIRIs.size(); i++)
-			set.retainAll(getIndividuals(classIRIs.get(i)));
+			set.retainAll(getIndividualsOfClass(classIRIs.get(i), importsForAsserted, mode));
 		return set;
 	}
-	
+
 	/**
-	 * Returns a set of individuals belonging to the specified class or any of its subclasses
-	 * @param classIRI The IRI of a class in the ontology
-	 * @return a set of individuals belonging to the specified class or any of its subclasses
+	 * Returns a set of individuals belonging to the specified class, according to the specified mode
+	 * @param classIri The IRI of a class in the ontology
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL)
+	 * @return a set of individuals belonging to the specified class, according to the specified mode.
 	 */
-	public Set<String> getIndividuals(String classIRI) {
-		final TreeSet<String> set = new TreeSet<>();
-		final OWLClass owlClass = factory.getOWLClass(classIRI, pm);
-		final NodeSet<OWLNamedIndividual> individualsNodeSet = reasoner.getInstances(owlClass, false);
-		final Set<OWLNamedIndividual> individuals = OWLAPIStreamUtils.asSet(individualsNodeSet.entities());
-		for (OWLNamedIndividual individual : individuals) {
-			set.add(individual.getIRI().getShortForm());
-		}
-		return set;
-	}
-	
-	/** 
-	 * Returns a list of strings representing the properties of the specified individual. This list includes the class it belongs to, the object properties and the data properties.
-	 * @param individualIRI An individual in the ontology
-	 * @param sep A separator to use between the property name and its value
-	 * @return a list of strings representing the properties of the specified individual. This list includes the class it belongs to, the object properties and the data properties.
-	 * Each string in the list is formatted as "PROPERTY_NAME" + sep + "PROPERTY_VALUE".
-	 */
-	public ArrayList<String> getIndividualProperties(String individualIRI, String sep) {
-		final ArrayList<String> list = new ArrayList<>();
-		for (String clazz : getIndividualClasses(individualIRI)) {
-		    list.add("SUBCLASS_OF" + sep + clazz);
-		}
-		for (String[] objectProp : getIndividualObjectProperties(individualIRI)) {
-		    list.add(objectProp[0] + sep + objectProp[1]);
-		}
-		for (String[] dataProp : getIndividualDataProperties(individualIRI)) {
-		    list.add(dataProp[0] + sep + dataProp[1]);
-		}
-		return list;
-	}
-	
-	/** 
-	 * Returns a list of strings representing the (direct) classes of a specified individual.
-	 * @param individualIRI An individual in the ontology
-	 * @return a list of strings representing the classes of a specified individual.
-	 */
-	public Set<String> getIndividualClasses(String individualIRI) {
-		return getIndividualClasses(individualIRI, false);
+	public Set<IRI> getIndividualsOfClass(IRI classIri, Imports importsForAsserted, InstanceCheckMode mode) {
+		return switch (mode) {
+			case ASSERTED_DIRECT -> this.individualQuery.getIndividualsOfClass(classIri, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.getIndividualsOfClass(classIri, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.getIndividualsOfClassInferred(classIri, true);
+			case INFERRED_ALL -> this.reasonedQuery.getIndividualsOfClassInferred(classIri, false);
+		};
 	}
 
-	/** 
-	 * Returns a list of strings representing the classes of a specified individual. 
-	 * If includeSuperClasses is true, the list will include all superclasses as well.
-	 * @param individualIRI An individual in the ontology
-	 * @return a list of strings representing the classes of a specified individual.
-	 */
-	public Set<String> getIndividualClasses(String individualIRI, boolean includeSuperClasses) {
-		final Set<String> result = new TreeSet<>();
-		OWLNamedIndividual ind = factory.getOWLNamedIndividual(individualIRI, pm);
-		if (includeSuperClasses) {
-			final Set<OWLClass> types = reasoner.types(ind).collect(Collectors.toSet());
-			for (OWLClass clazz : types)
-			if (!clazz.isAnonymous())
-				result.add(clazz.getIRI().getShortForm());
-		}
-		else {
-			for (OWLClassAssertionAxiom axiom : ontology.getAxioms(AxiomType.CLASS_ASSERTION, Imports.INCLUDED)) {
-				if (axiom.getIndividual().equals(ind)) {
-					OWLClassImpl classExpression = (OWLClassImpl) axiom.getClassExpression();
-					if (!classExpression.isAnonymous()) {
-						result.add(((OWLClassImpl)classExpression.asOWLClass()).getIRI().getShortForm());
-					}
-				}
-			}
-		}
-		return result;
-	}
-
-	/** 
-	 * Returns a list of pairs of strings representing the data property names and their values for the specified individual.
-	 * @param individualIRI An individual in the ontology
-	 * @return a list of pairs of strings representing the data property names and their values for the specified individual.
-	 */
-	public ArrayList<String[]> getIndividualDataProperties(String individualIRI) {
-		final ArrayList<String[]> list = new ArrayList<>();
-		for (OWLDataPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.DATA_PROPERTY_ASSERTION, Imports.INCLUDED)) {
-		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
-		        OWLDataPropertyImpl property = (OWLDataPropertyImpl) axiom.getProperty();
-		        list.add(new String[] {property.getIRI().getShortForm(), axiom.getObject().getLiteral()});
-		    }
-		}		
-		return list;
-	}
-	
-	/** 
-	 * Returns a list of pairs of strings representing the object property names and their values for the specified individual.
-	 * @param individualIRI An individual in the ontology
-	 * @return a list of pairs of strings representing the object property names and their values for the specified individual.
-	 */
-	public ArrayList<String[]> getIndividualObjectProperties(String individualIRI) {
-		final ArrayList<String[]> list = new ArrayList<>();
-		for (OWLObjectPropertyAssertionAxiom axiom : ontology.getAxioms(AxiomType.OBJECT_PROPERTY_ASSERTION, Imports.INCLUDED)) {
-		    if (axiom.getSubject().equals(factory.getOWLNamedIndividual(individualIRI, pm))) {
-		        OWLObjectPropertyImpl property = (OWLObjectPropertyImpl) axiom.getProperty();
-		        list.add(new String[] {property.getIRI().getShortForm(), ((OWLNamedIndividualImpl)axiom.getObject()).getIRI().getShortForm()});
-		    }
-		}
-		return list;
-	}
-	
 	/**
-	 * Returns a list of strings representing the values the specified dataProperty has for the specified individual
-	 * @param individualIRI An individual in the ontology
-	 * @param dataPropIRI A data property in the ontology
-	 * @return a list of strings representing the values the specified dataProperty has for the specified individual
-	 */
-	public ArrayList<String> getDataPropertyValues(String individualIRI, String dataPropIRI) {
-		Set<String> values = new LinkedHashSet<>();
-		OWLNamedIndividual ind = factory.getOWLNamedIndividual(individualIRI, pm);
-		OWLDataProperty prop = factory.getOWLDataProperty(dataPropIRI, pm);
-
-		ontology.getImportsClosure().forEach(o -> {
-			EntitySearcher.getDataPropertyValues(ind, prop, o)
-				.forEach(lit -> values.add(lit.getLiteral()));
-		});
-
-		return new ArrayList<>(values);
+     * Returns the superclasses of the specified class, according to the specified mode.
+     * @param classIri The IRI of a class in the ontology
+     * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+     * @param mode The instance check mode (ASSERTED, INFERRED_DIRECT, INFERRED_ALL)
+     */
+    public Set<IRI> getSuperClasses(final IRI classIri, final Imports importsForAsserted, InstanceCheckMode mode) {
+		Objects.requireNonNull(mode, "mode must not be null");
+		return switch (mode) {
+			case ASSERTED_DIRECT -> this.individualQuery.getSuperClassesAsserted(classIri, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.getSuperClassesAsserted(classIri, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.getSuperClassesInferred(classIri, true);
+			case INFERRED_ALL -> this.reasonedQuery.getSuperClassesInferred(classIri, false);
+		};
 	}
 
-	
 	/**
-	 * Returns a set of strings representing the names of the individuals referenced by the specified objectProperty of specified individual
+	 * Returns a set of IRIs representing the types of a specified individual, according to the specified mode. 
+	 * Depending on the mode, the types can be obtained from asserted axioms or inferred by the reasoner, and can include only direct types or all types (including superclasses).
 	 * @param individualIRI An individual in the ontology
-	 * @param objectPropIRI An object property in the ontology
-	 * @return a set of strings representing the names of the individuals referenced by the specified objectProperty of specified individual
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL) that determines how the types are obtained.
+	 * @return a set of IRIs representing the types of a specified individual, according to the specified mode.
 	 */
-	public Set<String> getObjectPropertyValues(String individualIRI, String objectPropIRI) {
-		final Set<String> result = new TreeSet<>();
-		final OWLNamedIndividual subject = factory.getOWLNamedIndividual(individualIRI, pm);
-		final OWLObjectProperty property = factory.getOWLObjectProperty(objectPropIRI, pm);
+	public Set<IRI> getTypes(IRI individualIRI, Imports importsForAsserted, InstanceCheckMode mode) {
+		Objects.requireNonNull(mode, "mode must not be null");
+		return switch (mode) {
+			case ASSERTED_DIRECT -> this.individualQuery.getAssertedTypes(individualIRI, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.getAssertedTypes(individualIRI, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.getTypesInferred(individualIRI, true);
+			case INFERRED_ALL -> this.reasonedQuery.getTypesInferred(individualIRI, false);
+		};
+	}
 
-		ontology.getImportsClosure().forEach(o -> {
-			EntitySearcher.getObjectPropertyValues(subject, property, o)
-				.forEach(obj -> {
-					if (obj.isNamed()) {
-						String shortName = obj.asOWLNamedIndividual().getIRI().getShortForm();
-						result.add(shortName);
-					} else {
-						result.add("[Anonymous Individual]");
-					}
-				});
-		});
-		
-		return result;
+	/**
+	 * Returns a set of IRIs representing the inferred types of a specified individual. If includeSuperClasses is true, 
+	 * the set will include all superclasses as well.
+	 * FIXME: This method is not consistent with other methods that use InstanceCheckMode, should be refactored. 
+	 * @param individualIRI An individual in the ontology
+	 * @param includeSuperClasses If true, the set will include all superclasses as well
+	 * @param imports Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED)
+	 * @return a set of IRIs representing the inferred types of a specified individual.
+	 */
+	public Set<IRI> getInferredTypes(IRI individualIRI, boolean includeSuperClasses, Imports imports) {
+		return reasonedQuery.getTypesInferred(individualIRI, includeSuperClasses);
+	}
+
+    /**
+     * Returns all asserted object property values for an individual, grouped by property.
+     * @param subjectIri The IRI of the subject individual
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return A map from object property IRIs to sets of object individual IRIs
+     */
+    public Map<IRI, Set<IRI>> getAllObjectPropertyValues(final IRI subjectIri, final Imports imports) {
+		return this.individualQuery.getAllObjectPropertyValues(subjectIri, imports);
+	}
+	
+    /**
+     * Returns asserted data property values for an individual.
+     * @param subjectIri The IRI of the subject individual
+     * @param dataPropertyIri The IRI of the data property
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return The set of data property values
+     */
+    public Set<OWLLiteral> getDataPropertyValues(final IRI subjectIri, final IRI dataPropertyIri, final Imports imports) {
+		return this.individualQuery.getDataPropertyValues(subjectIri, dataPropertyIri, imports);
+	}
+
+    /**
+     * Returns all asserted data property values for an individual, grouped by property.
+     * @param subjectIri The IRI of the subject individual
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return A map from data property IRIs to sets of data property values
+     */
+    public Map<IRI, Set<OWLLiteral>> getAllDataPropertyValues(final IRI subjectIri, final Imports imports) {
+		return this.individualQuery.getAllDataPropertyValues(subjectIri, imports);
+	}
+
+    /**
+     * Returns asserted object property values for an individual.
+     * @param subjectIri The IRI of the subject individual
+     * @param objectPropertyIri The IRI of the object property
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     * @return The set of object individual IRIs
+     */
+    public Set<IRI> getObjectPropertyValues(final IRI subjectIri, final IRI objectPropertyIri, final Imports imports) {
+		return this.individualQuery.getObjectPropertyValues(subjectIri, objectPropertyIri, imports);
 	}
 	
 	/**
 	 * Returns a set containing solely those individuals from the passed collection that belongs to the specified class
 	 * @param individuals A collection of individual names 
 	 * @param classIRI The IRI of a class in the ontology
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL) that determines how the types are obtained.
 	 * @return a set containing solely those individuals from the passed collection that belongs to the specified class
 	 */
-	public Set<String> getIndividualsSubclassOf(Collection<String> individuals, String classIRI) {
-		final Set<String> result = getIndividuals(classIRI); 
+	public Set<IRI> pickIndividualsSubclassOf(Collection<IRI> individuals, IRI classIRI, InstanceCheckMode mode) {
+		final Set<IRI> result = getIndividualsOfClass(classIRI, Imports.INCLUDED, mode); 
 		result.retainAll(individuals);
 		return result;
 	}
 	
 	/**
-	 * Removes all individuals of the specified class from the ontology
-	 * @param classIRI The IRI of a class in the ontology
-	 */
-	public void removeIndividualsOfClass(String classIRI) {
-		final OWLClass owlClass = factory.getOWLClass(classIRI, pm);
-		final NodeSet<OWLNamedIndividual> individualsNodeSet = reasoner.getInstances(owlClass, false);
-		final Set<OWLNamedIndividual> individuals = OWLAPIStreamUtils.asSet(individualsNodeSet.entities());
-		final OWLEntityRemover remover = new OWLEntityRemover(Collections.singleton(ontology));
-		for (OWLNamedIndividual individual : individuals) {
-			individual.accept(remover);
-		}
-		manager.applyChanges(remover.getChanges());
-		remover.reset();
-	}
-	
-	/**
-	 * Creates a subclass relationship between the specified class and its superclass
-	 * @param classIRI The IRI of the class to be created
-	 * @param superclassIRI The IRI of the superclass
-	 */
-	public void createClassSubClassOf(String classIRI, String superclassIRI) {
-		final OWLClassExpression owlSuperClass = factory.getOWLClass(superclassIRI, pm);
-		final OWLClass owlClass = factory.getOWLClass(classIRI, pm);
-		OWLSubClassOfAxiom ax = factory.getOWLSubClassOfAxiom(owlClass, owlSuperClass);
-		AddAxiom addAx = new AddAxiom(ontology, ax);
-	    manager.applyChange(addAx);
-	}
-	
-	/**
-	 * Collects all individuals of the specified class and changes them to subclasses of the specified class. 
-	 * Adds the prefix to the individual names to create the new class IRIs. 
-	 * @param classIRI The IRI of the class whose individuals will be changed to subclasses
-	 * @param prefix The prefix to be added to the individual names to create the new class IRIs
-	 */
-	public void changeInstanceToSubclass(String classIRI, String prefix) {
-		final Set<String> individuals = getIndividuals(classIRI);
-		removeIndividualsOfClass(classIRI);
-		for (String ind : individuals) {
-			createClassSubClassOf(prefix + ind, classIRI);
-		}
-	}
-
-	/**
 	 * Returns the label (rdfs:label) of an ontology element in a specific language, if available.
 	 * @param elementIRI The IRI of the element in the ontology
 	 * @param lang The language code (e.g., "es" or "en")
-	 * @return The label in the given language, or null if none is found
+	 * @return The label in the given language, or an empty Optional if none is found
 	 */
-	public String getLabelForIRI(String elementIRI, String lang) {
-		OWLEntity entity = ontology.entitiesInSignature(factory.getOWLNamedIndividual(elementIRI, pm).getIRI(), Imports.INCLUDED)
-			.findFirst()
-			.orElse(null);
-		if (entity != null) {
-			for (OWLOntology o : ontology.getImportsClosure()) {
-				for (OWLAnnotation annotation :
-						EntitySearcher.getAnnotations(entity, o).collect(Collectors.toList())) {
-					if (annotation.getProperty().isLabel() && annotation.getValue().asLiteral().isPresent()) {
-						OWLLiteral literal = annotation.getValue().asLiteral().get();
-						if (literal.hasLang(lang)) {
-							return literal.getLiteral();
-						}
-					}
-				}
-			}
-		}
-		return null;
-	}
-
-
-    public void checkProfile() throws OWLOntologyCreationException {
-        final OWLProfile profile = new OWL2DLProfile(); // o el perfil que te interese
-        final OWLProfileReport report = profile.checkOntology(ontology);
-
-        if (!report.isInProfile()) {
-            throw new OWLOntologyCreationException("Ontology does NOT comply with OWL 2 DL. Violations: " + report.getViolations().toString());
-        } 
-    }
-
-    /**
-     * Explain the ontology by providing insights into its structure and inconsistencies.
-     * @param ontology
-     * @author Adapted from HermiT's example
-     */
-    public void explain() {
-        
-        ReasonerFactory factory = new ReasonerFactory();
-        // We don't want HermiT to thrown an exception for inconsistent ontologies because then we 
-        // can't explain the inconsistency. This can be controlled via a configuration setting.  
-        Configuration configuration = new Configuration();
-        configuration.throwInconsistentOntologyException = false;
-        OWLReasoner reasoner = factory.createReasoner(ontology, configuration);
-        // Ok, here we go. Let's see why the ontology is inconsistent. 
-        System.out.println("Computing explanations for the inconsistency...");
-        factory = new ReasonerFactory() {
-            protected OWLReasoner createHermiTOWLReasoner(org.semanticweb.HermiT.Configuration configuration,OWLOntology ontology) {
-                // don't throw an exception since otherwise we cannot compte explanations 
-                configuration.throwInconsistentOntologyException=false;
-                return new Reasoner(configuration,ontology);
-            }  
-        };
-        // TODO: Implement different processing when there is a global inconsistency. Currently, a simple issue (wrong datatype for a single individual) produces all classes to print an explanation.
-        // I tried first with the global inconsistency (getExplanations(dataFactory.getOWLNothing()) but the resulting set was empty.
-        // I was also trying with the GlassBoxExplanation, but throws a null pointer exception
-/*        if (!reasoner.isConsistent()) {
-            ExplanationGeneratorFactory<OWLAxiom> genFac = ExplanationManager.createExplanationGeneratorFactory(factory, () -> ontology.getOWLOntologyManager());
-            ExplanationGenerator<OWLAxiom> gen = genFac.createExplanationGenerator(ontology);
-            OWLDataFactory dataFactory = ontology.getOWLOntologyManager().getOWLDataFactory();
-            Set<Explanation<OWLAxiom>> explanations = gen.getExplanations(dataFactory.getOWLSubClassOfAxiom(dataFactory.getOWLThing(), dataFactory.getOWLNothing()), 1);
-            for (Explanation<OWLAxiom> explanation : explanations) {
-                System.out.println("------------------");
-                System.out.println("Axioms causing the unsatisfiability: ");
-                for (OWLAxiom causingAxiom : explanation.getAxioms()) {
-                    System.out.println(" - " + causingAxiom);
-                }
-                System.out.println("------------------");
-            }
-        } 
-        else {*/
-            BlackBoxExplanation exp = new BlackBoxExplanation(ontology, factory, reasoner);
-            HSTExplanationGenerator multExplanator = new HSTExplanationGenerator(exp);
-            // Now we can get explanations for the inconsistency
-            //Set<Set<OWLAxiom>> explanations = multExplanator.getExplanations(dataFactory.getOWLNothing());
-            for (OWLClass cls : reasoner.getUnsatisfiableClasses()) {
-                if (!cls.isOWLNothing()) {
-                    Set<Set<OWLAxiom>> explanations = multExplanator.getExplanations(cls, 1);
-                    for (Set<OWLAxiom> explanation : explanations) {
-                        System.out.println("Explanation for " + cls + ":");
-                        explanation.forEach(ax -> System.out.println(" - " + ax));
-                    }
-                }
-            }
-        //}
-    }
-
-    public Set<OWLAxiom> getInferredAxioms() {
-        OWLReasonerFactory reasonerFactory = new ReasonerFactory(); // HermiT
-        OWLReasoner reasoner = reasonerFactory.createReasoner(ontology);
-
-        // Inference generator
-        InferredOntologyGenerator iog = new InferredOntologyGenerator(reasoner);
-
-        // Temporal ontology to store inferred axioms
-        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-        OWLDataFactory dataFactory = manager.getOWLDataFactory();
-        OWLOntology inferredOnt;
-        try {
-            inferredOnt = manager.createOntology();
-        } catch (OWLOntologyCreationException e) {
-            throw new RuntimeException(e);
-        }
-
-        try {
-            iog.fillOntology(dataFactory, inferredOnt);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        reasoner.dispose();
-
-        // Returns all inferred axioms
-        return inferredOnt.getAxioms();
-    }
-
-    public void replaceMin0ByOnlyRecursive() {
-        final OWLDataFactory factory = manager.getOWLDataFactory();
-        Set<OWLAxiom> axiomsToRemove = new HashSet<>();
-        Set<OWLAxiom> axiomsToAdd = new HashSet<>();
-
-        for (OWLSubClassOfAxiom ax : ontology.getAxioms(AxiomType.SUBCLASS_OF)) {
-            OWLClassExpression subCls = ax.getSubClass();
-            OWLClassExpression superCls = ax.getSuperClass();
-
-            OWLClassExpression newSuperCls = replaceMin0InExpression(superCls, factory);
-            if (!newSuperCls.equals(superCls)) {
-                axiomsToRemove.add(ax);
-                axiomsToAdd.add(factory.getOWLSubClassOfAxiom(subCls, newSuperCls));
-            }
-        }
-
-        manager.removeAxioms(ontology, axiomsToRemove);
-        manager.addAxioms(ontology, axiomsToAdd);
-    }
-
-    private OWLClassExpression replaceMin0InExpression(OWLClassExpression expr, OWLDataFactory factory) {
-        // Si es una restricción de min cardinality
-        if (expr instanceof OWLObjectMinCardinality) {
-            OWLObjectMinCardinality minCard = (OWLObjectMinCardinality) expr;
-            if (minCard.getCardinality() == 0) {
-                return factory.getOWLObjectAllValuesFrom(minCard.getProperty().asOWLObjectProperty(), minCard.getFiller());
-            }
-        }
-        else if (expr instanceof OWLDataMinCardinality) {
-            OWLDataMinCardinality minCard = (OWLDataMinCardinality) expr;
-            if (minCard.getCardinality() == 0) {
-                return factory.getOWLDataAllValuesFrom(minCard.getProperty().asOWLDataProperty(), minCard.getFiller());
-            }
-        }
-
-        // Si es una intersección, se procesa recursivamente cada operando
-        if (expr instanceof OWLObjectIntersectionOf) {
-            List<OWLClassExpression> newOperands = ((OWLObjectIntersectionOf) expr).getOperands().stream()
-                    .map(e -> replaceMin0InExpression(e, factory))
-                    .collect(Collectors.toList());
-            return factory.getOWLObjectIntersectionOf(newOperands);
-        }
-
-        // Si es unión, complemento, etc., se puede extender de forma similar
-        // Por ahora devolvemos el mismo si no se cumple nada
-        return expr;
-    }
-	
-	/**
-	 * Converts a camel case string to SNAKE_CASE.
-	 * Adapted from https://www.geeksforgeeks.org/convert-camel-case-string-to-snake-case-in-java/
-	 * @param name The camel case string to be converted
-	 * @return The converted string in SNAKE_CASE
-	 */
-	public static String camel2SNAKE(String name) {
-        // Regular Expression
-        final String regex = "([a-z])([A-Z]+)";
- 
-        // Replacement string
-        final String replacement = "$1_$2";
- 
-        // Replace the given regex
-        // with replacement string
-        // and convert it to upper case.
-        return name.replaceAll(regex, replacement).toUpperCase();
-	}
-
-	/**
-	 * Prints a tabulated list of individuals, their classes, object properties and data properties.
-	 * The output is formatted as:
-	 * Individual    Class    ObjectProperties    DataProperties
-	 * #Individual1  Class1  #ObjectProp1: #ObjectValue1; #ObjectProp2: #ObjectValue2;    #DataProp1: DataValue1; #DataProp2: DataValue2;
-	 */
-	public void printTabulatedIndividuals() {
-		System.out.print("Individual\tClass\tObjectProperties\tDataProperties\n");
-
-		for (String individual : individualsToString()) {
-
-			System.out.print("#" + individual + "\t" + getIndividualClasses(individual).stream().collect(Collectors.joining(", ")) + "\t");
-			ArrayList<String[]> objectProps = getIndividualObjectProperties(individual);
-			ArrayList<String[]> dataProps = getIndividualDataProperties(individual);
-			for (String[] objectProp : objectProps)
-				System.out.print("#" + objectProp[0] + ": #" + objectProp[1] + "; ");
-			System.out.print("\t");
-			for (String[] dataProp : dataProps)
-				System.out.print("#" + dataProp[0] + ": " + dataProp[1] + "; ");
-			System.out.println();
-		}
-	}
-
-	/**
-	 * Prints a list of individuals, their classes, object properties and data properties.
-	 * If full is true, it prints the individual name, class, object properties and data properties.
-	 * If full is false, it prints only the individual name.
-	 * @param full If true, prints the individual name, class, object properties and data properties; otherwise, prints only the individual name.
-	 */
-	public void printIndividuals(boolean full) {
-		if (full) {
-			for (String individual : individualsToString()) {
-				final ArrayList<String> props = getIndividualProperties(individual, "\t");
-				for (String prop : props)
-					System.out.println(individual + "\t" + prop);
-			}
-		}
-		else  {
-			for (String individual : individualsToString())
-				System.out.println(individual);
-		}
-	}
-
-	/**
-	 * Prints a list of individuals of the specified class, their properties and values.
-	 * If full is true, it prints the individual name, class, object properties and data properties.
-	 * If full is false, it prints only the individual name.
-	 * @param classIRI The IRI of the class whose individuals will be printed
-	 * @param full If true, prints the individual name, class, object properties and data properties; otherwise, prints only the individual name.
-	 */
-	public void printIndividuals(String classIRI, boolean full) {
-		if (full) {
-			for (String individual : getIndividuals(classIRI)) {
-				final ArrayList<String> props = getIndividualProperties(individual, "\t");
-				for (String prop : props)
-					System.out.println(individual + "\t" + prop);
-			}
-		}
-		else  {
-			for (String individual : getIndividuals(classIRI))
-				System.out.println(individual);
-		}
-	}
-	
-	/**
-	 * Print the names of the classes in the ontology, one per line.
-	 * If the class names are to be printed as an enum, use printClassesAsEnum() instead.
-	 */
-	public void printClasses() {
-		for (String clazz: classesToString())
-			System.out.println(clazz);
-	}
-	
-	/**
-	 * A convenient method to populate enums in java with a collection of classes.
-	 * The class names are converted to SNAKE_CASE format.
-	 * If the class names are to be printed as a list, use printClasses() instead.
-	 */
-	public void printClassesAsEnum() {
-		for (String name : classesToString()) {
-			System.out.println(camel2SNAKE(name) + "(\"" + name + "\"),");
-		}
-	}
-
-	/**
-	 * Print the names of the data properties in the ontology, one per line.
-	 * If the data property names are to be printed as an enum, use printDataPropertiesAsEnum() instead.
-	 */
-	public void printDataProperties() {
-		for (String dataProp: dataPropertiesToString())
-			System.out.println(dataProp);
-	}
-	
-	/**
-	 * A convenient method to populate enums in java with a collection of data properties.
-	 * The data property names are converted to SNAKE_CASE format.
-	 * If the data property names are to be printed as a list, use printDataProperties() instead.
-	 */
-	public void printDataPropertiesAsEnum() {
-		for (String name : dataPropertiesToString()) {
-			System.out.println(camel2SNAKE(name) + "(\"" + name + "\"),");
-		}
-	}
-
-	/**
-	 * Print the names of the object properties in the ontology, one per line.
-	 * If the object property names are to be printed as an enum, use printObjectPropertiesAsEnum() instead.
-	 */
-	public void printObjectProperties() {
-		for (String objectProp: objectPropertiesToString())
-			System.out.println(objectProp);
-	}
-	
-	/**
-	 * A convenient method to populate enums in java with a collection of object properties.
-	 * The object property names are converted to SNAKE_CASE format.
-	 * If the object property names are to be printed as a list, use printObjectProperties() instead.
-	 */
-	public void printObjectPropertiesAsEnum() {
-		for (String name : objectPropertiesToString()) {
-			System.out.println(camel2SNAKE(name) + "(\"" + name + "\"),");
-		}
-	}
-	
-	public static void main(String[] args) {
-		if (args.length < 2) {
-			System.out.println("Usage: java -jar OWLOntologyWrapper.jar <ontology file/IRI> <mode>");
-			System.out.println("Mode can be 1 to print individuals, 2 to print classes and properties to be used in an enum");
-			return;
-		}
-		boolean isURI = true;
-		OWLOntologyWrapper wrapper = null;
-		try {
-			new URI(args[0]);
-		} catch (Exception e) {
-			isURI = false;
-		}
-		
-		try {
-			if (isURI) {
-				IRI iri = IRI.create(args[0]);
-				wrapper = new OWLOntologyWrapper(iri);
-			}
-			else {
-				final Path path = Paths.get(args[0]);
-				if (!Files.exists(path) || !Files.isRegularFile(path)) {
-					System.err.println("The specified ontology file does not exist or is not a regular file: " + args[0]);
-					return;
-				}
-				wrapper = new OWLOntologyWrapper(args[0]);
-			}
-			int mode = Integer.parseInt(args[1]);
-			switch (mode) {
-				case 1:
-					wrapper.printTabulatedIndividuals();
-					break;
-				case 2:
-					System.out.println("---------------- CLASSES ----------------");
-					wrapper.printClassesAsEnum();
-					System.out.println("---------------- DATA PROPS ----------------");
-					wrapper.printDataPropertiesAsEnum();
-					System.out.println("---------------- OBJECT PROPS ----------------");
-					wrapper.printObjectPropertiesAsEnum();
-					break;
-				default:
-					System.out.println("Invalid mode. Use 1 or 2.");
-					break;
-			}
-		} catch (OWLOntologyCreationException e) {
-			e.printStackTrace();
-		}
+	public Optional<String> getLabelForIRI(IRI elementIRI, String lang) {
+		return this.individualQuery.getLabelForIRI(elementIRI, lang);
 	}
 }
