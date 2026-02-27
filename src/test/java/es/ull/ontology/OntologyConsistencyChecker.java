@@ -26,6 +26,7 @@ import es.ull.simulation.ontology.LoadedOntology;
 import es.ull.simulation.ontology.OWLOntologyWrapper;
 import es.ull.simulation.ontology.OntologyLoadOptions;
 import es.ull.simulation.ontology.OntologyLoader;
+import es.ull.simulation.ontology.OWLOntologyWrapper.InstanceCheckMode;
 
 public class OntologyConsistencyChecker {
     private enum EntityType {
@@ -138,7 +139,7 @@ public class OntologyConsistencyChecker {
     public int countWrongTypesForIndividual(OWLOntologyWrapper checkedWrapper, IRI individualIRI, List<String> issues) {
         Objects.requireNonNull(individualIRI, "individualIRI must not be null");
         int errors = 0;
-        Set<IRI> assertedClasses = checkedWrapper.getAssertedTypes(individualIRI, false, Imports.EXCLUDED);
+        Set<IRI> assertedClasses = checkedWrapper.getTypes(individualIRI, Imports.EXCLUDED, InstanceCheckMode.ASSERTED_ALL);
         for (IRI classIRI : assertedClasses) {
             final EntityType refType = refEntityTypes.get(classIRI);
             if (refType != EntityType.CLASS) {
@@ -151,7 +152,7 @@ public class OntologyConsistencyChecker {
 
     public boolean checkEmptyTypeForIndividual(OWLOntologyWrapper checkedWrapper, IRI individualIRI, List<String> issues) {
         Objects.requireNonNull(individualIRI, "individualIRI must not be null");
-        Set<IRI> assertedClasses = checkedWrapper.getAssertedTypes(individualIRI, false, Imports.EXCLUDED);
+        Set<IRI> assertedClasses = checkedWrapper.getTypes(individualIRI, Imports.EXCLUDED, InstanceCheckMode.ASSERTED_ALL);
         return assertedClasses.isEmpty();
     }
 

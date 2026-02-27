@@ -32,18 +32,15 @@ public final class ReasonedQuery {
 
     /**
      * Returns the inferred types of the specified individual.
-     * @param includeSuperClasses if true, returns all inferred types (including superclasses);
-     *                            if false, returns only the direct inferred types (most specific).
+     * @param directOnly if false, returns all inferred types (including superclasses);
+     *                            if true, returns only the direct inferred types (most specific).
      */
-    public Set<IRI> getTypesInferred(final IRI individualIri, final boolean includeSuperClasses) {
+    public Set<IRI> getTypesInferred(final IRI individualIri, final boolean directOnly) {
         Objects.requireNonNull(individualIri, "individualIri must not be null");
 
         final OWLNamedIndividual ind = Objects.requireNonNull(ctx.getFactory().getOWLNamedIndividual(individualIri));
 
-        // OWLAPI: getTypes(ind, true) -> all types; getTypes(ind, false) -> direct types
-        final boolean reasonerDirectFlag = !includeSuperClasses;
-
-        return ctx.getReasoner().getTypes(ind, reasonerDirectFlag).entities()
+        return ctx.getReasoner().getTypes(ind, directOnly).entities()
                 .map(OWLClass::getIRI)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }

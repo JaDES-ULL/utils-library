@@ -42,7 +42,8 @@ public class OWLOntologyWrapper {
 	 * Modes for checking or quering instanceOf relationships
 	 */
 	public enum InstanceCheckMode {
-		ASSERTED,
+		ASSERTED_DIRECT,
+		ASSERTED_ALL,
 		INFERRED_DIRECT,
 		INFERRED_ALL
 	}	
@@ -185,6 +186,14 @@ public class OWLOntologyWrapper {
 	 */
 	public OntologyRefactoring getOntologyRefactoring() {
 		return this.ontologyRefactoring;
+	}
+
+	/**
+	 * Returns the reasoned query helper, with utility methods for querying inferred information
+	 * @return The reasoned query helper
+	 */
+	public ReasonedQuery getReasonedQuery() {
+		return this.reasonedQuery;
 	}
 
 	/**
@@ -488,7 +497,8 @@ public class OWLOntologyWrapper {
 	 * Returns true if the specified individual is an instance of the specified class, according to the specified mode
 	 * @param individualIri The IRI of an individual in the ontology
 	 * @param classIri The IRI of a class in the ontology
-	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
 	 * @param mode The instance check mode (ASSERTED, INFERRED_DIRECT, INFERRED_ALL)
 	 * @return true if the specified individual is an instance of the specified class, according to the specified mode.
 	 */
@@ -496,7 +506,8 @@ public class OWLOntologyWrapper {
 		Objects.requireNonNull(mode, "mode must not be null");
 
 		return switch (mode) {
-			case ASSERTED -> this.individualQuery.isInstanceOfAsserted(individualIri, classIri, importsForAsserted);
+			case ASSERTED_DIRECT -> this.individualQuery.isInstanceOfAsserted(individualIri, classIri, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.isInstanceOfAsserted(individualIri, classIri, false, importsForAsserted);
 			case INFERRED_DIRECT -> this.reasonedQuery.isInstanceOfInferred(individualIri, classIri, true);
 			case INFERRED_ALL -> this.reasonedQuery.isInstanceOfInferred(individualIri, classIri);
 		};
@@ -509,53 +520,77 @@ public class OWLOntologyWrapper {
 	 * @return true if the ontology contains the specified individual
 	 */
 	public boolean existsIndividual(IRI individualIri, Imports imports) {
-		return this.individualQuery.existsIndividual(individualIri, imports);
+		return this.ontologyResolution.existsOWLNamedIndividual(individualIri, imports);
 	}
 
 	/**
 	 * Returns a set of individuals belonging at the same time to ALL the specified classes or any of its subclasses
 	 * @param classIRIs A collection of IRIs for classes in the ontology
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL)
 	 * @return a set of individuals belonging at the same time to ALL the specified classes or any of its subclasses
 	 */
-	public Set<IRI> getIndividuals(List<IRI> classIRIs) {
+	public Set<IRI> getIndividualsOfAllClasses(List<IRI> classIRIs, Imports importsForAsserted, InstanceCheckMode mode) {
 		if (classIRIs.size() == 0)
 			return new TreeSet<>();
-		final Set<IRI> set = getIndividualsOfClass(classIRIs.get(0), Imports.INCLUDED, InstanceCheckMode.ASSERTED);
+		final Set<IRI> set = getIndividualsOfClass(classIRIs.get(0), importsForAsserted, mode);
 		for (int i = 1; i < classIRIs.size(); i++)
-			set.retainAll(getIndividualsOfClass(classIRIs.get(i), Imports.INCLUDED, InstanceCheckMode.ASSERTED));
+			set.retainAll(getIndividualsOfClass(classIRIs.get(i), importsForAsserted, mode));
 		return set;
 	}
 
 	/**
 	 * Returns a set of individuals belonging to the specified class, according to the specified mode
 	 * @param classIri The IRI of a class in the ontology
-	 * @param imports Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms
-	 * @param mode The instance check mode (ASSERTED, INFERRED_DIRECT, INFERRED_ALL)
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL)
 	 * @return a set of individuals belonging to the specified class, according to the specified mode.
 	 */
-	public Set<IRI> getIndividualsOfClass(IRI classIri, Imports imports, InstanceCheckMode mode) {
+	public Set<IRI> getIndividualsOfClass(IRI classIri, Imports importsForAsserted, InstanceCheckMode mode) {
 		return switch (mode) {
-			case ASSERTED ->
-				this.individualQuery.getIndividualsOfClass(classIri, imports);
-			case INFERRED_DIRECT ->
-				this.reasonedQuery.getIndividualsOfClassInferred(classIri, true);
-			case INFERRED_ALL ->
-				this.reasonedQuery.getIndividualsOfClassInferred(classIri, false);
+			case ASSERTED_DIRECT -> this.individualQuery.getIndividualsOfClass(classIri, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.getIndividualsOfClass(classIri, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.getIndividualsOfClassInferred(classIri, true);
+			case INFERRED_ALL -> this.reasonedQuery.getIndividualsOfClassInferred(classIri, false);
 		};
-	}	
-	
+	}
+
 	/**
-	 * Returns a set of IRIs representing the asserted types of a specified individual. If includeSuperClasses is true, 
-	 * the set will include all superclasses as well (extracted from asserted SubClassOf axioms and not by using a reasoner).
+     * Returns the superclasses of the specified class, according to the specified mode.
+     * @param classIri The IRI of a class in the ontology
+     * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+     * @param mode The instance check mode (ASSERTED, INFERRED_DIRECT, INFERRED_ALL)
+     */
+    public Set<IRI> getSuperClasses(final IRI classIri, final Imports importsForAsserted, InstanceCheckMode mode) {
+		Objects.requireNonNull(mode, "mode must not be null");
+		return switch (mode) {
+			case ASSERTED_DIRECT -> this.individualQuery.getSuperClassesAsserted(classIri, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.getSuperClassesAsserted(classIri, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.getSuperClassesInferred(classIri, true);
+			case INFERRED_ALL -> this.reasonedQuery.getSuperClassesInferred(classIri, false);
+		};
+	}
+
+	/**
+	 * Returns a set of IRIs representing the types of a specified individual, according to the specified mode. 
+	 * Depending on the mode, the types can be obtained from asserted axioms or inferred by the reasoner, and can include only direct types or all types (including superclasses).
 	 * @param individualIRI An individual in the ontology
-	 * @param includeSuperClasses If true, the set will include all superclasses as well
-	 * @param imports Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED)
-	 * @return a set of IRIs representing the asserted types of a specified individual.
+	 * @param importsForAsserted Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED) when checking asserted axioms. 
+	 * Inferred modes ignore this parameter and always consider the imports closure.
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL) that determines how the types are obtained.
+	 * @return a set of IRIs representing the types of a specified individual, according to the specified mode.
 	 */
-	public Set<IRI> getAssertedTypes(IRI individualIRI, boolean includeSuperClasses,Imports imports) {
-		if (includeSuperClasses)
-			return individualQuery.getAssertedTypesWithSuperclasses(individualIRI, imports);
-		return individualQuery.getTypes(individualIRI, imports);
+	public Set<IRI> getTypes(IRI individualIRI, Imports importsForAsserted, InstanceCheckMode mode) {
+		Objects.requireNonNull(mode, "mode must not be null");
+		return switch (mode) {
+			case ASSERTED_DIRECT -> this.individualQuery.getAssertedTypes(individualIRI, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.getAssertedTypes(individualIRI, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.getTypesInferred(individualIRI, true);
+			case INFERRED_ALL -> this.reasonedQuery.getTypesInferred(individualIRI, false);
+		};
 	}
 
 	/**
@@ -617,10 +652,11 @@ public class OWLOntologyWrapper {
 	 * Returns a set containing solely those individuals from the passed collection that belongs to the specified class
 	 * @param individuals A collection of individual names 
 	 * @param classIRI The IRI of a class in the ontology
+	 * @param mode The instance check mode (ASSERTED_DIRECT, ASSERTED_ALL, INFERRED_DIRECT, INFERRED_ALL) that determines how the types are obtained.
 	 * @return a set containing solely those individuals from the passed collection that belongs to the specified class
 	 */
-	public Set<IRI> pickIndividualsSubclassOf(Collection<IRI> individuals, IRI classIRI) {
-		final Set<IRI> result = getIndividualsOfClass(classIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED); 
+	public Set<IRI> pickIndividualsSubclassOf(Collection<IRI> individuals, IRI classIRI, InstanceCheckMode mode) {
+		final Set<IRI> result = getIndividualsOfClass(classIRI, Imports.INCLUDED, mode); 
 		result.retainAll(individuals);
 		return result;
 	}

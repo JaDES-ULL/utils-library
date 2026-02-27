@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
@@ -97,123 +98,62 @@ public final class IndividualQuery {
     }
 
     /**
-     * Checks whether an individual with the given IRI exists in the ontology signature.
-     * @param individualIri The IRI of the individual to check
-     * @param imports The imports setting (INCLUDED or EXCLUDED)
-     * @return true if the individual exists; false otherwise
-     */
-    public boolean existsIndividual(final IRI individualIri, final Imports imports) {
-        Objects.requireNonNull(individualIri, "individualIri must not be null");
-        Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsIndividualInSignature(individualIri, imports);
-    }
-
-    /**
-     * Checks whether a class with the given IRI exists in the ontology signature.
-     * @param classIri The IRI of the class to check
-     * @param imports The imports setting (INCLUDED or EXCLUDED)
-     * @return true if the class exists; false otherwise
-     */
-    public boolean existsClass(final IRI classIri, final Imports imports) {
-        Objects.requireNonNull(classIri, "classIri must not be null");
-        Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsClassInSignature(classIri, imports);
-    }
-
-    /**
-     * Checks whether an object property with the given IRI exists in the ontology signature.
-     * @param propIri The IRI of the object property to check
-     * @param imports The imports setting (INCLUDED or EXCLUDED)
-     * @return true if the object property exists; false otherwise
-     */
-    public boolean existsObjectProperty(final IRI propIri, final Imports imports) {
-        Objects.requireNonNull(propIri, "propIri must not be null");
-        Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsObjectPropertyInSignature(propIri, imports);
-    }
-
-    /**
-     * Checks whether a data property with the given IRI exists in the ontology signature.
-     * @param propIri The IRI of the data property to check
-     * @param imports The imports setting (INCLUDED or EXCLUDED)
-     * @return true if the data property exists; false otherwise
-     */
-    public boolean existsDataProperty(final IRI propIri, final Imports imports) {
-        Objects.requireNonNull(propIri, "propIri must not be null");
-        Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsDataPropertyInSignature(propIri, imports);
-    }
-
-    /**
      * Returns the asserted named classes for an individual (ClassAssertion axioms).
-     * If imports == INCLUDED, traverses the imports closure.
+     * If imports == INCLUDED, traverses the imports closure. If directOnly == false, returns asserted types plus all (named) 
+     * superclasses reachable through asserted SubClassOf axioms in the selected scope (local or imports closure). 
+     * This method does not use a reasoner, but performs a graph traversal over the asserted subclass hierarchy. 
+     * It ignores anonymous superclass expressions (restrictions, intersections, etc.).
      * @param individualIri The IRI of the individual
+     * @param directOnly if false, returns all asserted types (including superclasses); if true, returns only the direct asserted types (most specific).
      * @param imports The imports setting (INCLUDED or EXCLUDED)
      * @return The set of named class IRIs
      */
-    public Set<IRI> getTypes(final IRI individualIri, final Imports imports) {
+    public Set<IRI> getAssertedTypes(final IRI individualIri, final boolean directOnly, final Imports imports) {
         Objects.requireNonNull(individualIri, "individualIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
 
-        final Set<IRI> result = new LinkedHashSet<>();
+        final Set<IRI> closure = new LinkedHashSet<>();
         final OWLNamedIndividual ind = Objects.requireNonNull(ctx.getFactory().getOWLNamedIndividual(individualIri));
 
         if (imports == Imports.EXCLUDED) {
             for (OWLClassAssertionAxiom ax : ctx.getOntology().getClassAssertionAxioms(ind)) {
                 OWLClassExpression ce = ax.getClassExpression();
                 if (!ce.isAnonymous()) {
-                    result.add(ce.asOWLClass().getIRI());
+                    closure.add(ce.asOWLClass().getIRI());
                 }
             }
-            return result;
+            return closure;
         }
 
         for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
             for (OWLClassAssertionAxiom ax : o.getClassAssertionAxioms(ind)) {
                 OWLClassExpression ce = ax.getClassExpression();
                 if (!ce.isAnonymous()) {
-                    result.add(ce.asOWLClass().getIRI());
+                    closure.add(ce.asOWLClass().getIRI());
                 }
             }
         }
-        return result;
-    }
-
-    /**
-     * Returns asserted types plus all (named) superclasses reachable through asserted SubClassOf
-     * axioms in the selected scope (local or imports closure). This method does not use a reasoner, 
-     * but performs a graph traversal over the asserted subclass hierarchy. It ignores anonymous superclass 
-     * expressions (restrictions, intersections, etc.).
-     * @param individualIri The IRI of the individual
-     * @param imports The imports setting (INCLUDED or EXCLUDED)
-     * @return The set of named class and superclass IRIs
-     */
-    public Set<IRI> getAssertedTypesWithSuperclasses(final IRI individualIri, final Imports imports) {
-        Objects.requireNonNull(individualIri, "individualIri must not be null");
-        Objects.requireNonNull(imports, "imports must not be null");
-
-        // Start from asserted named types (direct)
-        final Set<IRI> closure = new LinkedHashSet<>(getTypes(individualIri, imports));
-        if (closure.isEmpty()) {
+        if (directOnly || closure.isEmpty()) {
             return closure;
         }
+        else {
+            // Worklist/BFS over superclass edges
+            final Deque<IRI> queue = new ArrayDeque<>(closure);
+            while (!queue.isEmpty()) {
+                final IRI currentClassIri = Objects.requireNonNull(queue.removeFirst());
+                final OWLClass current = ctx.getFactory().getOWLClass(currentClassIri);
 
-        // Worklist/BFS over superclass edges
-        final Deque<IRI> queue = new ArrayDeque<>(closure);
-        while (!queue.isEmpty()) {
-            final IRI currentClassIri = Objects.requireNonNull(queue.removeFirst());
-            final OWLClass current = ctx.getFactory().getOWLClass(currentClassIri);
-
-            if (imports == Imports.EXCLUDED) {
-                enqueueNamedSuperclasses(ctx.getOntology(), current, closure, queue);
-            } else {
-                for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
-                    enqueueNamedSuperclasses(o, current, closure, queue);
+                if (imports == Imports.EXCLUDED) {
+                    enqueueNamedSuperclasses(ctx.getOntology(), current, closure, queue);
+                } else {
+                    for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
+                        enqueueNamedSuperclasses(o, current, closure, queue);
+                    }
                 }
             }
-        }
 
-        return closure;
+            return closure;
+        }
     }
 
     /**
@@ -247,10 +187,12 @@ public final class IndividualQuery {
      * in the selected scope (local or imports closure).
      * @param individualIri The IRI of the individual
      * @param classIri The IRI of the class
+     * @param directOnly if true, checks only for direct assertions; if false, checks for any assertion of the class or its superclasses 
+     * (traversing asserted subclass hierarchy as in getAssertedTypesWithSuperclasses)
      * @param imports The imports setting (INCLUDED or EXCLUDED)
      * @return true if the individual is asserted to be an instance of the class; false otherwise
      */
-    public boolean isInstanceOfAsserted(final IRI individualIri, final IRI classIri, final Imports imports) {
+    public boolean isInstanceOfAsserted(final IRI individualIri, final IRI classIri, final boolean directOnly, final Imports imports) {
         Objects.requireNonNull(individualIri, "individualIri must not be null");
         Objects.requireNonNull(classIri, "classIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
@@ -265,65 +207,116 @@ public final class IndividualQuery {
         final OWLNamedIndividual ind = Objects.requireNonNull(ctx.getFactory().getOWLNamedIndividual(individualIri));
         final OWLClass cls = Objects.requireNonNull(ctx.getFactory().getOWLClass(classIri));
 
-        if (imports == Imports.EXCLUDED) {
-            return ctx.getOntology().getClassAssertionAxioms(ind).stream()
-                    .anyMatch(ax -> {
-                        OWLClassExpression ce = ax.getClassExpression();
-                        return !ce.isAnonymous() && ce.asOWLClass().equals(cls);
-                    });
-        }
+        final Set<OWLClass> directClasses = (imports == Imports.INCLUDED
+                ? ctx.getOntology().importsClosure()
+                : Stream.of(ctx.getOntology()))
+                .flatMap(ont -> ont.getClassAssertionAxioms(ind).stream())
+                .map(OWLClassAssertionAxiom::getClassExpression)
+                .filter(ce -> !ce.isAnonymous())
+                .map(OWLClassExpression::asOWLClass)
+                .collect(Collectors.toSet());
 
-        for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
-            for (OWLClassAssertionAxiom ax : o.getClassAssertionAxioms(ind)) {
-                OWLClassExpression ce = ax.getClassExpression();
-                if (!ce.isAnonymous() && ce.asOWLClass().equals(cls)) {
-                    return true;
-                }
-            }
+        if (directOnly) {
+            return directClasses.contains(cls);
+        } else {
+            return directClasses.stream()
+                    .anyMatch(directClass -> directClass.equals(cls) ||
+                            getSuperClassesAsserted(directClass.getIRI(), false, imports).contains(classIri));
         }
-        return false;
+    }
+
+    /**
+     * Returns the superclasses of the specified class (asserted).
+     * @param classIri The IRI of a class in the ontology
+     * @param directOnly if true, returns only direct superclasses; if false, returns all superclasses (transitive closure).
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     */
+    public Set<IRI> getSuperClassesAsserted(final IRI classIri, final boolean directOnly, final Imports imports) {
+        Objects.requireNonNull(classIri, "classIri must not be null");
+        Objects.requireNonNull(imports, "imports must not be null");
+
+        final OWLClass cls = Objects.requireNonNull(ctx.getFactory().getOWLClass(classIri));
+        final Stream<OWLOntology> ontologies = imports == Imports.INCLUDED
+                ? ctx.getOntology().importsClosure()
+                : Stream.of(ctx.getOntology());
+
+        if (directOnly) {
+            return ontologies
+                    .flatMap(ont -> ont.getSubClassAxiomsForSubClass(cls).stream())
+                    .map(OWLSubClassOfAxiom::getSuperClass)
+                    .filter(superExpr -> !superExpr.isAnonymous())
+                    .map(superExpr -> superExpr.asOWLClass().getIRI())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } else {
+            final Set<IRI> result = new LinkedHashSet<>();
+            final Deque<OWLClass> queue = new ArrayDeque<>();
+            queue.add(cls);
+
+            while (!queue.isEmpty()) {
+                final OWLClass current = Objects.requireNonNull(queue.poll());
+                (imports == Imports.INCLUDED
+                        ? ctx.getOntology().importsClosure()
+                        : Stream.of(ctx.getOntology()))
+                        .flatMap(ont -> ont.getSubClassAxiomsForSubClass(current).stream())
+                        .map(OWLSubClassOfAxiom::getSuperClass)
+                        .filter(superExpr -> !superExpr.isAnonymous())
+                        .map(OWLClassExpression::asOWLClass)
+                        .forEach(superClass -> {
+                            if (result.add(superClass.getIRI())) {
+                                queue.add(superClass);
+                            }
+                        });
+            }
+            return result;
+        }
     }
 
     /**
      * Returns named individuals x such that ClassAssertion(class, x) is asserted.
      * If imports == INCLUDED, traverses the imports closure.
      * @param classIri The IRI of the class
+     * @param directOnly if true, returns only individuals with a direct ClassAssertion; if false, returns individuals with a ClassAssertion to the class 
+     * or any of its subclasses (traversing asserted subclass hierarchy as in getSuperClassesAsserted)
      * @param imports The imports setting (INCLUDED or EXCLUDED)
      * @return The set of named individual IRIs
      */
-    public Set<IRI> getIndividualsOfClass(final IRI classIri, final Imports imports) {
+    public Set<IRI> getIndividualsOfClass(final IRI classIri, final boolean directOnly, final Imports imports) {
         Objects.requireNonNull(classIri, "classIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
 
-        final Set<IRI> result = new LinkedHashSet<>();
-
-        // If the class is not in the scope signature, there cannot be asserted instances (in that scope).
         if (!ctx.getOntology().containsClassInSignature(classIri, imports)) {
-            return result;
+            return new LinkedHashSet<>();
         }
 
         final OWLClass cls = Objects.requireNonNull(ctx.getFactory().getOWLClass(classIri));
 
-        if (imports == Imports.EXCLUDED) {
-            for (OWLClassAssertionAxiom ax : ctx.getOntology().getClassAssertionAxioms(cls)) {
-                OWLIndividual ind = ax.getIndividual();
-                if (!ind.isAnonymous()) {
-                    result.add(ind.asOWLNamedIndividual().getIRI());
-                }
-            }
+        final Set<IRI> directIndividuals = (imports == Imports.INCLUDED
+                ? ctx.getOntology().importsClosure()
+                : Stream.of(ctx.getOntology()))
+                .flatMap(ont -> ont.getClassAssertionAxioms(cls).stream())
+                .map(OWLClassAssertionAxiom::getIndividual)
+                .filter(ind -> !ind.isAnonymous())
+                .map(ind -> ind.asOWLNamedIndividual().getIRI())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (directOnly) {
+            return directIndividuals;
+        } else {
+            // Include also individuals whose asserted type hierarchy contains cls
+            final Set<IRI> result = new LinkedHashSet<>(directIndividuals);
+
+            // Collect all named individuals in scope
+            (imports == Imports.INCLUDED
+                    ? ctx.getOntology().importsClosure()
+                    : Stream.of(ctx.getOntology()))
+                    .flatMap(ont -> ont.individualsInSignature())
+                    .map(OWLNamedIndividual::getIRI)
+                    .filter(indIri -> !result.contains(indIri))
+                    .filter(indIri -> isInstanceOfAsserted(indIri, classIri, false, imports))
+                    .forEach(result::add);
+
             return result;
         }
-
-        for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
-            for (OWLClassAssertionAxiom ax : o.getClassAssertionAxioms(cls)) {
-                OWLIndividual ind = ax.getIndividual();
-                if (!ind.isAnonymous()) {
-                    result.add(ind.asOWLNamedIndividual().getIRI());
-                }
-            }
-        }
-
-        return result;
     }
 
     /**
@@ -611,6 +604,39 @@ public final class IndividualQuery {
             Objects.requireNonNull(o, "ontology in imports closure must not be null");
             for (OWLAnnotation annotation : EntitySearcher.getAnnotations(entity, o).collect(Collectors.toList())) {
                 if (!annotation.getProperty().isLabel() || annotation.getValue().asLiteral().isEmpty()) {
+                    continue;
+                }
+                OWLLiteral literal = annotation.getValue().asLiteral().get();
+                if (literal.hasLang(lang)) {
+                    return Optional.of(literal.getLiteral());
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+	/**
+	 * Returns the comment (rdfs:comment) of an ontology element in a specific language, if available.
+	 * @param elementIRI The IRI of the element in the ontology
+	 * @param lang The language code (e.g., "es" or "en")
+	 * @return The label in the given language, or an empty Optional if not found
+	 */
+    public Optional<String> getCommentForIRI(IRI elementIRI, String lang) {
+        Objects.requireNonNull(elementIRI, "elementIRI must not be null");
+        Objects.requireNonNull(lang, "lang must not be null");
+
+        OWLEntity entity = ctx.getOntology().entitiesInSignature(elementIRI, Imports.INCLUDED)
+                .findFirst()
+                .orElse(null);
+
+        if (entity == null) {
+            return Optional.empty();
+        }
+
+        for (OWLOntology o : ctx.getOntology().getImportsClosure()) {
+            Objects.requireNonNull(o, "ontology in imports closure must not be null");
+            for (OWLAnnotation annotation : EntitySearcher.getAnnotations(entity, o).collect(Collectors.toList())) {
+                if (!annotation.getProperty().isComment() || annotation.getValue().asLiteral().isEmpty()) {
                     continue;
                 }
                 OWLLiteral literal = annotation.getValue().asLiteral().get();

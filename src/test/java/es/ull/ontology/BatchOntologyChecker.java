@@ -99,6 +99,12 @@ public class BatchOntologyChecker {
                             int wrongAnnotations = checker.countWrongAnnotationsForIndividual(checkedWrapper, entityIRI, issues);
                             if (!refWrapper.getIndividualsInSignature(Imports.EXCLUDED).contains(entityIRI))
                                 printResults(out, fileNameOnly, entityData, missingType, wrongTypes, wrongObjProperties + wrongDataProperties + wrongAnnotations);
+                            if (!issues.isEmpty()) {
+                                LOGGER.debug("Issues for individual " + entityData[0] + " in ontology " + path.getFileName() + ":");
+                                for (String issue : issues) {
+                                    LOGGER.debug(" - " + issue);
+                                }
+                            }
                         }
 //                        checker.check(checkedWrapper);
                     } catch (OWLOntologyCreationException e) {

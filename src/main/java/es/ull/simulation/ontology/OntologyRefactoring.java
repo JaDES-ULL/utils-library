@@ -57,7 +57,7 @@ public class OntologyRefactoring {
 	public void changeInstanceToSubclass(IRI classIRI, String prefix) {
         Objects.requireNonNull(classIRI, "classIRI must not be null");
         Objects.requireNonNull(prefix, "prefix must not be null");
-        final Set<IRI> individualsIRI = individualQuery.getIndividualsOfClass(classIRI, Imports.EXCLUDED);
+        final Set<IRI> individualsIRI = individualQuery.getIndividualsOfClass(classIRI, true, Imports.EXCLUDED);
 		removeIndividualsOfClass(classIRI);
 		for (IRI ind : individualsIRI) {
 			createClassSubClassOf(resolution.toIRI(prefix + ind.getShortForm()), classIRI);
@@ -69,7 +69,7 @@ public class OntologyRefactoring {
 	 * @param classIRI The IRI of a class in the ontology
 	 */
 	public void removeIndividualsOfClass(IRI classIRI) {
-        final Set<IRI> individualsIRI = individualQuery.getIndividualsOfClass(classIRI, Imports.EXCLUDED);
+        final Set<IRI> individualsIRI = individualQuery.getIndividualsOfClass(classIRI, true, Imports.EXCLUDED);
 		final OWLEntityRemover remover = new OWLEntityRemover(Objects.requireNonNull(Collections.singleton(ctx.getOntology())));
 		for (IRI indIRI : individualsIRI) {
 			resolution.asOWLNamedIndividual(indIRI).accept(remover);

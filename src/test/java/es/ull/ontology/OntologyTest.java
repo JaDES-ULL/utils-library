@@ -287,22 +287,22 @@ public class OntologyTest {
         final IRI testDiseaseClassIRI = ontologyWrapper.toIRI(TEST_DISEASE_CLASS);
         final IRI testSuperClassIRI = ontologyWrapper.toIRI(TEST_SUPER_CLASS);
         final IRI testModelClassIRI = ontologyWrapper.toIRI(TEST_MODEL_CLASS);
-        assertTrue(ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testDiseaseClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED),
+        assertTrue(ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testDiseaseClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED_DIRECT),
             "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should be a subclass of " + TEST_DISEASE_CLASS); 
-        assertTrue(!ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testSuperClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED),
+        assertTrue(!ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testSuperClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED_DIRECT),
             "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should not be determined to be a subclass of " + TEST_SUPER_CLASS + " without inference");
         assertTrue(ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testSuperClassIRI, Imports.INCLUDED, InstanceCheckMode.INFERRED_ALL),
             "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should be a subclass of " + TEST_SUPER_CLASS + " with inference");
-        assertTrue(!ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testModelClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED),
+        assertTrue(!ontologyWrapper.isInstanceOf(testPreloadedDiseaseIndividualIRI, testModelClassIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED_DIRECT),
             "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should not be a subclass of " + TEST_MODEL_CLASS);
 
-        Set<IRI> classIRIs = ontologyWrapper.getAssertedTypes(testPreloadedDiseaseIndividualIRI, true, Imports.INCLUDED);
+        Set<IRI> classIRIs = ontologyWrapper.getTypes(testPreloadedDiseaseIndividualIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED_ALL);
         log.debug("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
         classIRIs.forEach(c -> log.debug(" - " + c));
         assertTrue(classIRIs.size() == 2, TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to 2 classes");
         assertTrue(classIRIs.contains(testDiseaseClassIRI), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_DISEASE_CLASS);
         assertTrue(classIRIs.contains(testSuperClassIRI), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to class " + TEST_SUPER_CLASS);
-        classIRIs = ontologyWrapper.getAssertedTypes(testPreloadedDiseaseIndividualIRI, false, Imports.INCLUDED);
+        classIRIs = ontologyWrapper.getTypes(testPreloadedDiseaseIndividualIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED_DIRECT);
         log.debug("DIRECT Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
         classIRIs.forEach(c -> log.debug(" - " + c));
         assertTrue(classIRIs.size() == 1, TEST_PRELOADED_DISEASE_INDIVIDUAL + " should belong to 1 class");
@@ -348,7 +348,7 @@ public class OntologyTest {
         log.debug("IRI to check: " + testPreloadedDiseaseIndividualIRI);
         assertTrue(ontologyWrapper.findOWLClass(testModelClassIRI).isPresent(), "The class " + TEST_MODEL_CLASS + " should exist");
         assertTrue(ontologyWrapper.findOWLIndividual(testPreloadedDiseaseIndividualIRI).isPresent(), "The individual " + TEST_PRELOADED_DISEASE_INDIVIDUAL + " should exist");
-        Set<IRI> diseaseClasseIRIs = ontologyWrapper.getAssertedTypes(testPreloadedDiseaseIndividualIRI, true, Imports.INCLUDED);
+        Set<IRI> diseaseClasseIRIs = ontologyWrapper.getTypes(testPreloadedDiseaseIndividualIRI, Imports.INCLUDED, InstanceCheckMode.ASSERTED_DIRECT);
         log.debug("Classes for individual '" + TEST_PRELOADED_DISEASE_INDIVIDUAL + "':");
         diseaseClasseIRIs.forEach(c -> log.debug(" - " + c));
     }

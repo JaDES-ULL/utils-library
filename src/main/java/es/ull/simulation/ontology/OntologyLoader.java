@@ -23,6 +23,7 @@ import org.semanticweb.owlapi.util.SimpleIRIMapper;
  * A class to load OWL ontologies from files or IRIs with optional local IRI mappings
  */
 public class OntologyLoader {
+
     /**
      * Loads an ontology from the specified file or IRI with default options
      * @param ontologyFileOrIRI The file path or IRI of the ontology
@@ -30,7 +31,7 @@ public class OntologyLoader {
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
     public LoadedOntology load(String ontologyFileOrIRI) throws OWLOntologyCreationException {
-        return load(ontologyFileOrIRI, OWLManager.createOWLOntologyManager(), getDefaultLoadOptions());
+        return load(getOntologyDocumentSourceFromString(ontologyFileOrIRI), OWLManager.createOWLOntologyManager(), getDefaultLoadOptions());
     }
 
     /**
@@ -41,7 +42,7 @@ public class OntologyLoader {
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
     public LoadedOntology load(String ontologyFileOrIRI, OntologyLoadOptions options) throws OWLOntologyCreationException {
-        return load(ontologyFileOrIRI, OWLManager.createOWLOntologyManager(), options);
+        return load(getOntologyDocumentSourceFromString(ontologyFileOrIRI), OWLManager.createOWLOntologyManager(), options);
     }
 
     /**
@@ -52,25 +53,7 @@ public class OntologyLoader {
      * @throws OWLOntologyCreationException if there is an error loading the ontology
      */
     public LoadedOntology load(String ontologyFileOrIRI, OWLOntologyManager manager, OntologyLoadOptions options) throws OWLOntologyCreationException {
-        Objects.requireNonNull(ontologyFileOrIRI, "Ontology file/IRI must not be null");
-        boolean isURI = true;
-        try {
-            new java.net.URI(ontologyFileOrIRI);
-        } catch (Exception e) {
-            isURI = false;
-        }
-        OWLOntologyDocumentSource source;
-        if (isURI) {
-            source = new IRIDocumentSource(Objects.requireNonNull(IRI.create(ontologyFileOrIRI)));
-        }
-        else {
-            final Path path = Paths.get(ontologyFileOrIRI);
-            if (!Files.exists(path) || !Files.isRegularFile(path)) {
-                throw new OWLOntologyCreationException("The specified ontology file does not exist or is not a regular file: " + ontologyFileOrIRI);
-            }
-            source = new FileDocumentSource(Objects.requireNonNull(path.toFile()));
-        }
-        return load(source, manager, options);
+        return load(getOntologyDocumentSourceFromString(ontologyFileOrIRI), manager, options);
     }
 
     /**
@@ -165,4 +148,31 @@ public class OntologyLoader {
 			}
 		}
 	}
+
+    /**
+     * Creates an OWLOntologyDocumentSource from a string that can be either a file path or an IRI. It first tries to parse the string as a URI, and if that fails, 
+     * it treats it as a file path.
+     * @param ontologyFileOrIRI The string representing either the file path or the IRI of the ontology
+     * @return an OWLOntologyDocumentSource corresponding to the given string
+     * @throws OWLOntologyCreationException if the string is not a valid URI and does not correspond to an existing file path
+     */
+	public static OWLOntologyDocumentSource getOntologyDocumentSourceFromString(String ontologyFileOrIRI) throws OWLOntologyCreationException {
+        Objects.requireNonNull(ontologyFileOrIRI, "Ontology file/IRI must not be null");
+        boolean isURI = true;
+        try {
+            new java.net.URI(ontologyFileOrIRI);
+        } catch (Exception e) {
+            isURI = false;
+        }
+        if (isURI) {
+            return new IRIDocumentSource(Objects.requireNonNull(IRI.create(ontologyFileOrIRI)));
+        }
+        else {
+            final Path path = Paths.get(ontologyFileOrIRI);
+            if (!Files.exists(path) || !Files.isRegularFile(path)) {
+                throw new OWLOntologyCreationException("The specified ontology file does not exist or is not a regular file: " + ontologyFileOrIRI);
+            }
+            return new FileDocumentSource(Objects.requireNonNull(path.toFile()));
+        }
+    }
 }

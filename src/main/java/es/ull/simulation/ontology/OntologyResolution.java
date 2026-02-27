@@ -132,8 +132,9 @@ public class OntologyResolution {
      * @return True if the class exists, false otherwise
      */
     public boolean existsOWLClass(final IRI classIri, final Imports imports) {
+        Objects.requireNonNull(classIri, "classIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsClassInSignature(Objects.requireNonNull(classIri), imports);
+        return ctx.getOntology().containsClassInSignature(classIri, imports);
     }
 
     /**
@@ -143,8 +144,9 @@ public class OntologyResolution {
      * @return True if the object property exists, false otherwise
      */
     public boolean existsOWLObjectProperty(final IRI propIri, final Imports imports) {
+        Objects.requireNonNull(propIri, "propIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsObjectPropertyInSignature(Objects.requireNonNull(propIri), imports);
+        return ctx.getOntology().containsObjectPropertyInSignature(propIri, imports);
     }
 
     /**
@@ -154,8 +156,9 @@ public class OntologyResolution {
      * @return True if the data property exists, false otherwise
      */
     public boolean existsOWLDataProperty(final IRI propIri, final Imports imports) {
+        Objects.requireNonNull(propIri, "propIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsDataPropertyInSignature(Objects.requireNonNull(propIri), imports);
+        return ctx.getOntology().containsDataPropertyInSignature(propIri, imports);
     }
 
     /**
@@ -165,8 +168,9 @@ public class OntologyResolution {
      * @return True if the annotation property exists, false otherwise
      */
     public boolean existsOWLAnnotationProperty(final IRI propIri, final Imports imports) {
+        Objects.requireNonNull(propIri, "propIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsAnnotationPropertyInSignature(Objects.requireNonNull(propIri), imports);
+        return ctx.getOntology().containsAnnotationPropertyInSignature(propIri, imports);
     }
 
     /**
@@ -176,8 +180,9 @@ public class OntologyResolution {
      * @return True if the individual exists, false otherwise
      */
     public boolean existsOWLNamedIndividual(final IRI individualIri, final Imports imports) {
+        Objects.requireNonNull(individualIri, "individualIri must not be null");
         Objects.requireNonNull(imports, "imports must not be null");
-        return ctx.getOntology().containsIndividualInSignature(Objects.requireNonNull(individualIri), imports);
+        return ctx.getOntology().containsIndividualInSignature(individualIri, imports);
     }
 
     /**

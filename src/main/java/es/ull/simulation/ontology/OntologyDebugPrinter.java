@@ -172,7 +172,7 @@ public final class OntologyDebugPrinter {
 		for (IRI individual : individualQuery.getIndividualsInSignature(imports)) {
             String[] row = new String[5];
             table.add(row);
-            final Set<IRI> types = individualQuery.getTypes(individual, imports);
+            final Set<IRI> types = individualQuery.getAssertedTypes(individual, true, imports);
             row[0] = individual.getShortForm();
             row[1] = types.stream().map(IRI::getShortForm).collect(Collectors.joining("; "));
             Map<IRI, Set<IRI>> objProps = individualQuery.getAllObjectPropertyValues(individual, imports);
@@ -220,7 +220,7 @@ public final class OntologyDebugPrinter {
 	 * Each string in the list is formatted as "PROPERTY_NAME" + sep + "PROPERTY_VALUE".
 	 */
 	public void prettyPrintIndividualProperties(IRI individualIRI, String sep) {
-		for (IRI clazz : individualQuery.getAssertedTypesWithSuperclasses(individualIRI, Imports.INCLUDED)) {
+		for (IRI clazz : individualQuery.getAssertedTypes(individualIRI, false, Imports.INCLUDED)) {
 		    out.println(individualIRI.getShortForm() + sep + "SUBCLASS_OF" + sep + clazz.getShortForm());
 		}
         Map<IRI, Set<IRI>> objProps = individualQuery.getAllObjectPropertyValues(individualIRI, Imports.INCLUDED);
@@ -248,7 +248,7 @@ public final class OntologyDebugPrinter {
 	 */
 	public void prettyPrintIndividuals(String classIRI) {
         Objects.requireNonNull(classIRI, "classIRI must not be null");
-        final Set<IRI> individualIris = individualQuery.getIndividualsOfClass(IRI.create(classIRI), Imports.INCLUDED);
+        final Set<IRI> individualIris = individualQuery.getIndividualsOfClass(IRI.create(classIRI), true, Imports.INCLUDED);
         for (IRI individual : individualIris) {
             prettyPrintIndividualProperties(individual,  "\t");
         }
