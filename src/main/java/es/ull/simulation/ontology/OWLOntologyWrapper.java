@@ -574,6 +574,16 @@ public class OWLOntologyWrapper {
 		};
 	}
 
+	public Set<IRI> getSubClasses(final IRI classIri, final Imports importsForAsserted, InstanceCheckMode mode) {
+		Objects.requireNonNull(mode, "mode must not be null");
+		return switch (mode) {
+			case ASSERTED_DIRECT -> this.individualQuery.getSubClassesAsserted(classIri, true, importsForAsserted);
+			case ASSERTED_ALL -> this.individualQuery.getSubClassesAsserted(classIri, false, importsForAsserted);
+			case INFERRED_DIRECT -> this.reasonedQuery.getSubClassesInferred(classIri, true);
+			case INFERRED_ALL -> this.reasonedQuery.getSubClassesInferred(classIri, false);
+		};
+	}
+	
 	/**
 	 * Returns a set of IRIs representing the types of a specified individual, according to the specified mode. 
 	 * Depending on the mode, the types can be obtained from asserted axioms or inferred by the reasoner, and can include only direct types or all types (including superclasses).
@@ -591,19 +601,6 @@ public class OWLOntologyWrapper {
 			case INFERRED_DIRECT -> this.reasonedQuery.getTypesInferred(individualIRI, true);
 			case INFERRED_ALL -> this.reasonedQuery.getTypesInferred(individualIRI, false);
 		};
-	}
-
-	/**
-	 * Returns a set of IRIs representing the inferred types of a specified individual. If includeSuperClasses is true, 
-	 * the set will include all superclasses as well.
-	 * FIXME: This method is not consistent with other methods that use InstanceCheckMode, should be refactored. 
-	 * @param individualIRI An individual in the ontology
-	 * @param includeSuperClasses If true, the set will include all superclasses as well
-	 * @param imports Whether to consider only the local ontology (Imports.EXCLUDED) or the imports closure (Imports.INCLUDED)
-	 * @return a set of IRIs representing the inferred types of a specified individual.
-	 */
-	public Set<IRI> getInferredTypes(IRI individualIRI, boolean includeSuperClasses, Imports imports) {
-		return reasonedQuery.getTypesInferred(individualIRI, includeSuperClasses);
 	}
 
     /**

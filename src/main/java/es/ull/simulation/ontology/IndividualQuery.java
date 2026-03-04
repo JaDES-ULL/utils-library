@@ -272,6 +272,52 @@ public final class IndividualQuery {
     }
 
     /**
+     * Returns the subclasses of the specified class (asserted).
+     * @param classIri The IRI of a class in the ontology
+     * @param directOnly if true, returns only direct subclasses; if false, returns all subclasses (transitive closure).
+     * @param imports The imports setting (INCLUDED or EXCLUDED)
+     */
+    public Set<IRI> getSubClassesAsserted(final IRI classIri, final boolean directOnly, final Imports imports) {
+        Objects.requireNonNull(classIri, "classIri must not be null");
+        Objects.requireNonNull(imports, "imports must not be null");
+
+        final OWLClass cls = Objects.requireNonNull(ctx.getFactory().getOWLClass(classIri));
+        final Stream<OWLOntology> ontologies = imports == Imports.INCLUDED
+                ? ctx.getOntology().importsClosure()
+                : Stream.of(ctx.getOntology());
+
+        if (directOnly) {
+            return ontologies
+                    .flatMap(ont -> ont.getSubClassAxiomsForSuperClass(cls).stream())
+                    .map(OWLSubClassOfAxiom::getSubClass)
+                    .filter(subExpr -> !subExpr.isAnonymous())
+                    .map(subExpr -> subExpr.asOWLClass().getIRI())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } else {
+            final Set<IRI> result = new LinkedHashSet<>();
+            final Deque<OWLClass> queue = new ArrayDeque<>();
+            queue.add(cls);
+
+            while (!queue.isEmpty()) {
+                final OWLClass current = Objects.requireNonNull(queue.poll());
+                (imports == Imports.INCLUDED
+                        ? ctx.getOntology().importsClosure()
+                        : Stream.of(ctx.getOntology()))
+                        .flatMap(ont -> ont.getSubClassAxiomsForSuperClass(current).stream())
+                        .map(OWLSubClassOfAxiom::getSubClass)
+                        .filter(subExpr -> !subExpr.isAnonymous())
+                        .map(OWLClassExpression::asOWLClass)
+                        .forEach(subClass -> {
+                            if (result.add(subClass.getIRI())) {
+                                queue.add(subClass);
+                            }
+                        });
+            }
+            return result;
+        }
+    }
+    
+    /**
      * Returns named individuals x such that ClassAssertion(class, x) is asserted.
      * If imports == INCLUDED, traverses the imports closure.
      * @param classIri The IRI of the class

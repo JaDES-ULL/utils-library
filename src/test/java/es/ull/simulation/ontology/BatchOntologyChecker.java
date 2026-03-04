@@ -1,4 +1,4 @@
-package es.ull.ontology;
+package es.ull.simulation.ontology;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -15,11 +15,6 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyLoaderConfiguration;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.slf4j.Logger;
-
-import es.ull.simulation.ontology.LoadedOntology;
-import es.ull.simulation.ontology.OWLOntologyWrapper;
-import es.ull.simulation.ontology.OntologyLoadOptions;
-import es.ull.simulation.ontology.OntologyLoader;
 
 public class BatchOntologyChecker {
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(BatchOntologyChecker.class);

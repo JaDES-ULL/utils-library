@@ -91,7 +91,7 @@ public final class ReasonedQuery {
     }
 
     /**
-     * Returns the superclasses of the specified class (inferred).
+     * Returns the superclasses of the specified class but Thing (inferred).
      * @param classIri The IRI of a class in the ontology
      * @param directOnly if true, returns only direct superclasses; if false, returns all superclasses.
      */
@@ -100,13 +100,13 @@ public final class ReasonedQuery {
 
         final OWLClass cls = Objects.requireNonNull(ctx.getFactory().getOWLClass(classIri));
 
-        return ctx.getReasoner().getSuperClasses(cls, directOnly).entities()
+        return ctx.getReasoner().getSuperClasses(cls, directOnly).entities().filter(c -> !c.isOWLThing())
                 .map(OWLClass::getIRI)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
-     * Returns the subclasses of the specified class (inferred).
+     * Returns the subclasses of the specified class but Nothing (inferred).
      * @param classIri The IRI of a class in the ontology
      * @param directOnly if true, returns only direct subclasses; if false, returns all subclasses.
      */
@@ -115,7 +115,7 @@ public final class ReasonedQuery {
 
         final OWLClass cls = Objects.requireNonNull(ctx.getFactory().getOWLClass(classIri));
 
-        return ctx.getReasoner().getSubClasses(cls, directOnly).entities()
+        return ctx.getReasoner().getSubClasses(cls, directOnly).entities().filter(c -> !c.isOWLNothing())
                 .map(OWLClass::getIRI)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }

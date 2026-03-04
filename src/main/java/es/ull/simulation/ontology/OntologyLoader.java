@@ -99,7 +99,9 @@ public class OntologyLoader {
     public LoadedOntology load(OWLOntologyDocumentSource source, OWLOntologyManager manager, OntologyLoadOptions options) throws OWLOntologyCreationException {
         Objects.requireNonNull(source, "Ontology source should never be null");
         Objects.requireNonNull(manager, "Ontology manager should never be null");
-        Objects.requireNonNull(options, "Ontology load options should never be null");
+        if (options == null) {
+            options = getDefaultLoadOptions();
+        }
         addLocalIRIMappers(manager, options.getLocalMappings());
         final OWLDataFactory df = manager.getOWLDataFactory();
 
