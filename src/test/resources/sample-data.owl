@@ -8,7 +8,7 @@
     a owl:Ontology ;
     owl:imports <http://example.org/sample> .
 
-:BiotinidaseDeficiency_General a owl:NamedIndividual, :Disease ;
+:BiotinidaseDeficiency_General a owl:NamedIndividual, :RareDisease ;
     :hasDescription "Deficiencia de Biotinidasa (DB)" ;
     :includedByModel :BiotinidaseDeficiency_Model ;
                 rdfs:label "Biotinidase deficiency"@en ,

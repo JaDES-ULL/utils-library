@@ -15,6 +15,10 @@
     rdfs:subClassOf :ModelElement ;
     rdfs:label "Disease"@en .
 
+:RareDisease a owl:Class ;
+    rdfs:subClassOf :Disease ;
+    rdfs:label "Rare Disease"@en .
+    
 :SimulationModel a owl:Class ;
     rdfs:label "Simulation Model"@en .
 
