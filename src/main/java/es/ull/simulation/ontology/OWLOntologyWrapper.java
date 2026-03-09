@@ -80,6 +80,10 @@ public class OWLOntologyWrapper {
 	 * The debug printer helper 
 	 */
 	private final OntologyDebugPrinter debugPrinter;
+	/**
+	 * The SKOS query helper
+	 */
+	private final SKOSQuery skosQuery;
 
 	/**
 	 * Creates a wrapper for the specified ontology and checks it against the specified profile
@@ -115,6 +119,7 @@ public class OWLOntologyWrapper {
 		this.reasonedQuery = new ReasonedQuery(ctx);
 		this.ontologyRefactoring = new OntologyRefactoring(ctx, ontologyResolution, individualQuery);
 		this.debugPrinter = new OntologyDebugPrinter(ctx, ontologyResolution, individualQuery);
+		this.skosQuery = new SKOSQuery(ctx, individualQuery);
 	}
 
 	/**
@@ -196,6 +201,38 @@ public class OWLOntologyWrapper {
 		return this.reasonedQuery;
 	}
 
+	/**
+	 * Returns the individual query helper, with utility methods for querying individuals
+	 * @return The individual query helper
+	 */
+	public IndividualQuery getIndividualQuery() {
+		return this.individualQuery;
+	}
+
+	/**
+	 * Returns the individual authoring helper, with utility methods for creating individuals and assertions
+	 * @return The individual authoring helper
+	 */
+	public IndividualAuthoring getIndividualAuthoring() {
+		return this.individualAuthoring;
+	}
+
+	/**
+	 * Returns the ontology resolution helper, with utility methods for resolving IRIs and entities
+	 * @return The ontology resolution helper
+	 */
+	public OntologyResolution getOntologyResolution() {
+		return this.ontologyResolution;
+	}
+
+	/**
+	 * Returns the SKOS query helper, with utility methods for querying SKOS concepts
+	 * @return The SKOS query helper
+	 */
+	public SKOSQuery getSKOSQuery() {
+		return this.skosQuery;
+	}
+	
 	/**
 	 * Converts a textual reference to an IRI. Accepts: (1) Absolute IRI: "https://...#X"; (2) - Prefixed name: "osdi:X", ":X"; 
 	 * and (3) Short form: "X" (the default prefix of the PrefixManager is assumed).
